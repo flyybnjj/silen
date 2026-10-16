@@ -47,7 +47,18 @@ internal static class AppUpdateInstaller
                 placedExe = true;
                 Directory.Move(Path.Combine(stage, "Archivos"), resources);
                 placedResources = true;
+                // El callback solo termina cuando el proceso nuevo acusa un arranque
+                // correcto. La copia anterior permanece durante toda la espera.
+                preserveBackup = true;
+                await File.WriteAllTextAsync(Path.Combine(transaction, "arranque-pendiente.txt"),
+                    "La actualización todavía no confirmó su arranque. La versión anterior y sus recursos están en backup. No elimines esta carpeta para intentar recuperar Silen.", CancellationToken.None).ConfigureAwait(false);
                 await restart(executable).ConfigureAwait(false);
+                preserveBackup = false;
+            }
+            catch (AppUpdateStartupException ex) when (ex.ProcessMayBeRunning)
+            {
+                preserveBackup = true;
+                throw new IOException($"No se confirmó el arranque de Silen. El proceso nuevo puede seguir abierto; no se sobrescribió. La versión anterior se conserva en {backup}.", ex);
             }
             catch (Exception original)
             {
@@ -57,12 +68,15 @@ internal static class AppUpdateInstaller
                     if (placedExe) File.Delete(executable);
                     if (backedResources) Directory.Move(Path.Combine(backup, "Archivos"), resources);
                     if (backedExe) File.Move(Path.Combine(backup, "Silen.exe"), executable);
+                    preserveBackup = false;
                 }
                 catch (Exception rollback)
                 {
                     preserveBackup = true;
                     throw new IOException($"No se pudo restaurar completamente la instalación; conserva la copia anterior en {backup}.", new AggregateException(original, rollback));
                 }
+                if (original is AppUpdateStartupException)
+                    throw new IOException("La versión nueva terminó sin confirmar el arranque. Se restauró la versión anterior.", original);
                 throw;
             }
         }

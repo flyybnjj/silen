@@ -15,6 +15,7 @@ public partial class App : Application
     {
         var normalRelaunch = e.Args.Contains("--normal-ui", StringComparer.Ordinal);
         var startupArgs = e.Args.Where(arg => arg != "--normal-ui").ToArray();
+        AppUpdateStartupTicket? updateStartup = null;
         base.OnStartup(e);
         // Program despacha el ayudante antes de WPF; rechazar aquí mezclas de argumentos.
         if (startupArgs.FirstOrDefault() == SystemActionHost.Argument)
@@ -31,6 +32,11 @@ public partial class App : Application
         }
         try
         {
+            if (startupArgs.FirstOrDefault() == AppUpdateStartup.Argument)
+            {
+                updateStartup = AppUpdateStartup.Parse(startupArgs);
+                startupArgs = [];
+            }
             if (startupArgs is ["--performance-test", var performanceDirectory])
             {
                 await PerformanceProbe.RunAsync(Path.GetFullPath(performanceDirectory));
@@ -84,6 +90,12 @@ public partial class App : Application
             window.Show();
             if (startupArgs.Length == 0 || driverMode) _ = model.StartAppUpdateCheckAsync();
             await model.InitializeAsync(autoScan: startupArgs.Length == 0 || driverMode);
+            if (updateStartup is not null)
+            {
+                await window.Dispatcher.InvokeAsync(window.UpdateLayout, DispatcherPriority.ApplicationIdle);
+                if (!window.IsLoaded || !window.IsVisible) throw new InvalidOperationException("La ventana no completó el arranque.");
+                await AppUpdateStartup.ReportReadyAsync(updateStartup);
+            }
             if (startupArgs.Length == 0 || driverMode)
             { if (driverMode) model.SelectedPage = 2; ShutdownMode = ShutdownMode.OnMainWindowClose; return; }
             Task? liveRender = null;

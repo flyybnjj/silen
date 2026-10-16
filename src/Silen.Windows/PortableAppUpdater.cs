@@ -139,10 +139,5 @@ public static class PortableAppUpdater
         using var file = File.OpenRead(path);
         return Convert.ToHexString(SHA256.HashData(file));
     }
-    private static Task RestartAsync(string executable)
-    {
-        using var process = Process.Start(new ProcessStartInfo(executable) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(executable)! })
-            ?? throw new IOException("No se pudo reiniciar Silen; se restaurará la versión anterior.");
-        return Task.CompletedTask;
-    }
+    private static Task RestartAsync(string executable) => AppUpdateStartup.RestartAndConfirmAsync(executable);
 }

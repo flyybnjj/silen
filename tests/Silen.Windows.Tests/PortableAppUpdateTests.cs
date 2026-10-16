@@ -54,6 +54,48 @@ public sealed class PortableAppUpdateTests : IDisposable
         Assert.False(File.Exists(Path.Combine(Install, "Archivos", "data.txt")));
     }
     [Fact]
+    public async Task Started_process_without_health_ack_keeps_the_previous_version_and_its_resources()
+    {
+        ExistingInstall();
+        await Assert.ThrowsAnyAsync<IOException>(() => AppUpdateInstaller.ApplyAsync(ValidArchive(), Install,
+            _ => throw new AppUpdateStartupException("Sin acuse simulado", processMayBeRunning: true), default));
+        var transaction = Assert.Single(Directory.GetDirectories(Install, ".silen-update-*"));
+        Assert.Equal(OldExe, await File.ReadAllBytesAsync(Path.Combine(transaction, "backup", "Silen.exe")));
+        Assert.Equal("old data", await File.ReadAllTextAsync(Path.Combine(transaction, "backup", "Archivos", "old.txt")));
+        Assert.Equal(NewExe, await File.ReadAllBytesAsync(Path.Combine(Install, "Silen.exe")));
+        Assert.Equal("preserve", await File.ReadAllTextAsync(Path.Combine(Install, "unrelated.txt")));
+    }
+    [Fact]
+    public async Task Backup_is_removed_only_after_the_healthy_start_callback_completes()
+    {
+        ExistingInstall();
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var healthy = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var update = AppUpdateInstaller.ApplyAsync(ValidArchive(), Install, async _ =>
+        { entered.SetResult(); await healthy.Task; }, default);
+        try
+        {
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(3));
+            var transaction = Assert.Single(Directory.GetDirectories(Install, ".silen-update-*"));
+            Assert.Equal(OldExe, await File.ReadAllBytesAsync(Path.Combine(transaction, "backup", "Silen.exe")));
+            Assert.True(File.Exists(Path.Combine(transaction, "arranque-pendiente.txt")));
+            Assert.False(update.IsCompleted);
+        }
+        finally { healthy.TrySetResult(); await update; }
+        Assert.Empty(Directory.GetDirectories(Install, ".silen-update-*"));
+    }
+
+    [Fact]
+    public async Task Early_exit_restores_the_previous_version_instead_of_deleting_it()
+    {
+        ExistingInstall();
+        var error = await Assert.ThrowsAsync<IOException>(() => AppUpdateInstaller.ApplyAsync(ValidArchive(), Install,
+            _ => throw new AppUpdateStartupException("Salida prematura simulada", processMayBeRunning: false), default));
+        Assert.Contains("Se restauró la versión anterior", error.Message);
+        Assert.Equal(OldExe, await File.ReadAllBytesAsync(Path.Combine(Install, "Silen.exe")));
+        Assert.Equal("old data", await File.ReadAllTextAsync(Path.Combine(Install, "Archivos", "old.txt")));
+    }
+    [Fact]
     public async Task Release_with_wrong_executable_version_is_rejected_before_replacement()
     {
         ExistingInstall();
