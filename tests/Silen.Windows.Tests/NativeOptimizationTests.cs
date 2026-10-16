@@ -312,7 +312,8 @@ internal sealed class FakeOptimizationPlatform : IOptimizationPlatform
     private int writes;
     internal HashSet<string> DeniedWriteKeys = new(StringComparer.OrdinalIgnoreCase);
     public bool CanWriteKey(string path) => !DeniedWriteKeys.Any(key => path.Equals(key, StringComparison.OrdinalIgnoreCase) || path.StartsWith(key + "\\", StringComparison.OrdinalIgnoreCase));
-    public RegistryValueState ReadValue(string path, string name) { lock (values) return values.GetValueOrDefault(path + "|" + name) ?? RegistryValueState.Absent; }
+    internal Action? BeforeRead;
+    public RegistryValueState ReadValue(string path, string name) { BeforeRead?.Invoke(); lock (values) return values.GetValueOrDefault(path + "|" + name) ?? RegistryValueState.Absent; }
     public void WriteValue(string path, string name, RegistryValueState value)
     {
         BeforeWrite?.Invoke();

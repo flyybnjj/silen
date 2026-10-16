@@ -122,16 +122,16 @@ public sealed class PcOptimizationService(INativeOptimizationService native, Fun
                         "visual-effects" => (native as NativeOptimizationService ?? (native as SystemActionOptimizationService)?.Local) is { } effects ? await effects.ReduceVisualEffectsAsync(cancellationToken) : new(false, "Efectos no disponibles."),
                         _ => await native.SetToggleAsync(option.Id, option.Id is not ("xbox-captures" or "animations"), cancellationToken)
                     };
-                    results.Add(new(option.Id, option.Title, outcome.Success, outcome.Changed, false, outcome.Message));
+                    results.Add(new(option.Id, option.Title, outcome.Success, outcome.Changed, false, outcome.Message, outcome.Verification));
                 }
             }
             catch (OperationCanceledException)
             {
-                results.Add(new(option.Id, option.Title, false, false, false, "Paso interrumpido. Revisa los respaldos: puede haber cambios parciales recuperables."));
+                results.Add(new(option.Id, option.Title, false, false, false, "Paso interrumpido. Verificación incierta: revisa los respaldos antes de reintentar.", ChangeVerification.Uncertain));
                 cancelled = true; break;
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException or Win32Exception or SecurityException)
-            { results.Add(new(option.Id, option.Title, false, false, false, ex.Message)); }
+            { results.Add(new(option.Id, option.Title, false, false, false, ex.Message + " Verificación incierta: revisa los respaldos antes de reintentar.", ChangeVerification.Uncertain)); }
             progress?.Report(new(results.Count, selected.Count, option.Title));
         }
         if (cancelled)

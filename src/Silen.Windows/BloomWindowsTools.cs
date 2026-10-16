@@ -49,7 +49,7 @@ public sealed class BloomWindowsTools(INativeOptimizationService native,
                 return new("Restaurar el último cambio respaldado: " + latest.Title + ". Se comprueba que otro programa no haya cambiado esos valores.", async cancellation =>
                 {
                     var result = await native.UndoAsync(latest.Id, cancellation);
-                    return JsonSerializer.SerializeToElement(new { success = result.Success, message = result.Message, changed = result.Changed });
+                    return JsonSerializer.SerializeToElement(new { success = result.Success, message = result.Message, changed = result.Changed, verification = result.Verification.ToString(), mayHaveChanged = result.MayHaveChanged });
                 });
             default: throw new BloomException("Herramienta fuera del catálogo de Bloom.");
         }

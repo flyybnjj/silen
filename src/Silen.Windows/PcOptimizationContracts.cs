@@ -9,17 +9,20 @@ public sealed record PcOptimizationOption(string Id, string Title, string Descri
 }
 public sealed record PcOptimizationPreview(List<PcOptimizationOption> Options);
 public sealed record PcOptimizationProgress(int Completed, int Total, string Title);
-public sealed record PcOptimizationStep(string Id, string Title, bool Success, bool Changed, bool Skipped, string Message)
+public sealed record PcOptimizationStep(string Id, string Title, bool Success, bool Changed, bool Skipped, string Message,
+    ChangeVerification Verification = ChangeVerification.Verified)
 {
-    public string State => Skipped ? "Omitido" : !Success ? "No se completó" : Changed ? "Aplicado" : "Ya estaba así";
+    public bool MayHaveChanged => Changed || Verification == ChangeVerification.Uncertain;
+    public string State => Verification == ChangeVerification.Uncertain ? "Verificación incierta" : Skipped ? "Omitido" : !Success ? "No se completó" : Changed ? "Aplicado" : "Ya estaba así";
 }
 public sealed record PcOptimizationResult(List<PcOptimizationStep> Steps, bool Cancelled)
 {
-    public int Applied => Steps.Count(step => step.Success && step.Changed);
-    public int Unchanged => Steps.Count(step => step.Success && !step.Changed && !step.Skipped);
+    public int Applied => Steps.Count(step => step.Success && step.Changed && step.Verification == ChangeVerification.Verified);
+    public int Unchanged => Steps.Count(step => step.Success && !step.MayHaveChanged && !step.Skipped);
+    public int Uncertain => Steps.Count(step => step.Verification == ChangeVerification.Uncertain);
     public int Skipped => Steps.Count(step => step.Skipped);
     public int Failed => Steps.Count(step => !step.Success && !step.Skipped);
-    public string Message => $"{(Cancelled ? "Proceso cancelado." : Failed > 0 || Skipped > 0 ? "Proceso completado con pasos pendientes." : "Proceso completado.")} {SpanishText.Count(Applied, "aplicado", "aplicados")} · {Unchanged} sin cambios · {SpanishText.Count(Skipped, "omitido", "omitidos")} · {Failed} con error. Los cambios guardados se pueden restaurar en Ajustes.";
+    public string Message => $"{(Cancelled ? "Proceso cancelado." : Failed > 0 || Skipped > 0 || Uncertain > 0 ? "Proceso completado con pasos pendientes." : "Proceso completado.")} {SpanishText.Count(Applied, "aplicado", "aplicados")} · {Unchanged} sin cambios · {SpanishText.Count(Skipped, "omitido", "omitidos")} · {Failed} con error. Los cambios guardados se pueden restaurar en Ajustes." + (Uncertain > 0 ? $" Verificación incierta en {SpanishText.Count(Uncertain, "paso", "pasos")}; revisa los respaldos antes de reintentar." : "");
 }
 public interface IPcOptimizationService
 {

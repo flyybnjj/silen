@@ -8,7 +8,13 @@ public sealed record PowerScheme(string Id, string Name, bool Active);
 public sealed record StartupEntry(string Id, string Name, string Command, bool Enabled, string Scope, bool CanChange = true);
 public sealed record AppliedOptimization(string Id, string Title, DateTimeOffset AppliedAt, bool CanUndo, string Detail, bool Restored = false);
 public sealed record OptimizationOverview(List<ToggleSetting> Toggles, List<PowerScheme> PowerSchemes, List<StartupEntry> StartupEntries, List<AppliedOptimization> Changes);
-public sealed record OptimizationOutcome(bool Success, string Message, bool Changed = false);
+public enum ChangeVerification { Verified, Uncertain }
+// Changed solo confirma una diferencia observada. La incertidumbre no equivale a «sin cambios».
+public sealed record OptimizationOutcome(bool Success, string Message, bool Changed = false,
+    ChangeVerification Verification = ChangeVerification.Verified)
+{
+    public bool MayHaveChanged => Changed || Verification == ChangeVerification.Uncertain;
+}
 public sealed record TemporaryFileItem(string Id, string RelativePath, long Bytes);
 public sealed record TemporaryCleanupPreview(List<TemporaryFileItem> Files, long TotalBytes, bool Truncated, string Message);
 public sealed record TemporaryCleanupResult(int Removed, int Skipped, long BytesFreed, string Message, long RecoverableBytes = 0, string? RecoveryId = null);

@@ -254,7 +254,7 @@ public sealed partial class NativeOptimizationService : INativeOptimizationServi
         catch (OperationCanceledException) { throw; }
         catch (Exception ex) when (IsExpectedFailure(ex))
         {
-            return new OptimizationOutcome(false, FriendlyError(ex) + " El respaldo sigue disponible para recuperación.", entry is not null && HasChangedValue(entry));
+            return FailureOutcome(entry, FriendlyError(ex) + " El respaldo sigue disponible para recuperación.");
         }
     }, cancellationToken);
 
@@ -300,7 +300,7 @@ public sealed partial class NativeOptimizationService : INativeOptimizationServi
         catch (OperationCanceledException) { throw; }
         catch (Exception ex) when (IsExpectedFailure(ex))
         {
-            return new OptimizationOutcome(false, FriendlyError(ex), entry is not null && HasChangedValue(entry));
+            return FailureOutcome(entry, FriendlyError(ex));
         }
     }, token);
 
@@ -397,8 +397,29 @@ public sealed partial class NativeOptimizationService : INativeOptimizationServi
 
     private bool HasChangedValue(OptimizationJournalEntry entry)
     {
-        try { return entry.Values.Any(x => !ReadCurrent(x).Same(x.Previous)); }
-        catch (Exception ex) when (IsExpectedFailure(ex)) { return false; }
+        var state = VerifyChange(entry);
+        return state.Changed && state.Verification == ChangeVerification.Verified;
+    }
+
+    private (bool Changed, ChangeVerification Verification) VerifyChange(OptimizationJournalEntry entry)
+    {
+        var changed = false;
+        var verification = ChangeVerification.Verified;
+        foreach (var value in entry.Values)
+        {
+            try { changed |= !ReadCurrent(value).Same(value.Previous); }
+            catch (Exception ex) when (IsExpectedFailure(ex)) { verification = ChangeVerification.Uncertain; }
+        }
+        return (changed, verification);
+    }
+
+    private OptimizationOutcome FailureOutcome(OptimizationJournalEntry? entry, string message)
+    {
+        if (entry is null) return new(false, message);
+        var state = VerifyChange(entry);
+        if (state.Verification == ChangeVerification.Uncertain)
+            message += " Verificación incierta: no se pudo comprobar el estado final. Revisa los respaldos antes de reintentar.";
+        return new(false, message, state.Changed, state.Verification);
     }
 
     private static bool IsExpectedFailure(Exception ex) => ex is IOException or InvalidDataException or UnauthorizedAccessException or SecurityException
