@@ -41,9 +41,9 @@ internal static class Elevation
         catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
         { return new(new(false, "Se canceló la autorización de Windows. No se inició la operación del sistema."),
             RestorePoint: request.Action == SystemActionKind.CreateRestorePoint ? new(RestorePointState.Cancelled) : null); }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) { return new(new(false, "El ejecutor agotó el tiempo de la sesión. Revisa los respaldos antes de reintentar.")); }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or Win32Exception or InvalidOperationException)
-        { return new(new(false, "No se pudo completar la operación autorizada. " + ex.Message)); }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) { return new(new(false, "El ejecutor agotó el tiempo de la sesión. Verificación incierta: revisa los respaldos antes de reintentar.", Verification: LostAcknowledgementVerification())); }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or System.Text.Json.JsonException or UnauthorizedAccessException or Win32Exception or InvalidOperationException)
+        { return new(new(false, "No se recibió el acuse de la operación autorizada. Revisa los respaldos antes de reintentar. " + ex.Message, Verification: LostAcknowledgementVerification())); }
         finally
         {
             // Cerrar el canal cancela el token del helper: no depende de que una UI normal pueda matar un proceso elevado.
@@ -55,6 +55,9 @@ internal static class Elevation
                 helper.Dispose();
             }
         }
+        ChangeVerification LostAcknowledgementVerification() => helper is not null &&
+            request.Action is SystemActionKind.SetToggle or SystemActionKind.ResumeWindowsUpdate or SystemActionKind.Undo
+                ? ChangeVerification.Uncertain : ChangeVerification.Verified;
     }
 
     public static async Task<Silen.Core.DriverDownloadResult> DownloadDriverUpdatesAsync(IReadOnlyList<Silen.Core.DriverUpdateInfo> updates, CancellationToken cancellationToken)

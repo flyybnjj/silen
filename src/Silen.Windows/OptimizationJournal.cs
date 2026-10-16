@@ -16,10 +16,12 @@ internal sealed class OptimizationJournalEntry
 
 internal sealed class OptimizationJournal
 {
+    internal const int MaximumBytes = 16 * 1024 * 1024;
     private readonly string directory;
     private readonly OptimizationAuthority authority;
     internal IReadOnlyList<OptimizationJournalEntry> UntrustedLegacyEntries { get; private set; } = [];
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true, Converters = { new JsonStringEnumConverter() } };
+    private static readonly JsonSerializerOptions CompactOptions = new(Options) { WriteIndented = false };
 
     internal OptimizationJournal(string directory, OptimizationAuthority authority = OptimizationAuthority.User)
     {
@@ -71,7 +73,7 @@ internal sealed class OptimizationJournal
         try
         {
             var file = new FileInfo(path);
-            if (file.Length > 16 * 1024 * 1024) throw new InvalidDataException("El respaldo de mejoras es demasiado grande.");
+            if (file.Length > MaximumBytes) throw new InvalidDataException("El respaldo de mejoras supera 16 MiB. Se conservó íntegro; no se aplicarán nuevos cambios hasta revisar su almacenamiento.");
             var entries = JsonSerializer.Deserialize<List<OptimizationJournalEntry>>(await File.ReadAllTextAsync(path, token), Options);
             if (entries is null || entries.Any(x => x is null)) throw new InvalidDataException("Respaldo de mejoras incompleto.");
             var ids = new HashSet<string>(StringComparer.Ordinal);
@@ -107,7 +109,8 @@ internal sealed class OptimizationJournal
         catch (JsonException ex) { throw new InvalidDataException("El respaldo de mejoras está dañado. Se conservó para recuperación.", ex); }
     }
 
-    internal async Task WriteAsync(List<OptimizationJournalEntry> entries, CancellationToken token)
+    internal async Task WriteAsync(List<OptimizationJournalEntry> entries, CancellationToken token, bool addingEntry = false,
+        OptimizationJournalEntry? pendingUndo = null)
     {
         foreach (var value in entries.SelectMany(entry => entry.Values)) DemandAuthority(value);
         var path = Path.Combine(directory, "optimizations.json");
@@ -119,8 +122,32 @@ internal sealed class OptimizationJournal
             {
                 if (authority == OptimizationAuthority.Machine) ProtectedOptimizationDirectory.ProtectNewFile(stream);
                 await JsonSerializer.SerializeAsync(stream, entries, Options, token);
+                // Reserva el crecimiento de los estados de todas las entradas para que
+                // completar o deshacer un cambio nuevo no vuelva ilegible el respaldo.
+                var reserve = addingEntry ? entries.Sum(entry => (long)"UndoPending".Length - entry.State.Length) : 0;
+                if (!addingEntry && stream.Length > MaximumBytes)
+                {
+                    // Un respaldo legado legible puede no reservar los dos bytes
+                    // de Completed -> UndoPending. Compactar conserva todos sus datos.
+                    await RewriteCompactAsync();
+                    if (stream.Length > MaximumBytes && pendingUndo?.State == "UndoPending")
+                    {
+                        // Pending es el estado durable genérico ya admitido por el
+                        // formato anterior. El reintento de Undo valida los mismos
+                        // valores Previous/Intended, sin depender de esta etiqueta.
+                        pendingUndo.State = "Pending";
+                        await RewriteCompactAsync();
+                    }
+                }
+                if (stream.Length + reserve > MaximumBytes)
+                    throw new InvalidDataException("El historial alcanzó su capacidad de 16 MiB. No se inició este cambio; se conservan todos los respaldos. Revisa su almacenamiento antes de aplicar más ajustes.");
                 await stream.FlushAsync(token);
                 stream.Flush(flushToDisk: true);
+                async Task RewriteCompactAsync()
+                {
+                    stream.SetLength(0); stream.Position = 0;
+                    await JsonSerializer.SerializeAsync(stream, entries, CompactOptions, token);
+                }
             }
             File.Move(temporary, path, overwrite: true);
         }

@@ -7,12 +7,18 @@ namespace Silen.Windows;
 public enum SystemActionKind { SetToggle, ResumeWindowsUpdate, Undo, InspectHistory, DownloadDrivers, CreateRestorePoint }
 public sealed record SystemDriverUpdateIdentity(Guid UpdateId, int Revision);
 public sealed record SystemActionRequest(SystemActionKind Action, string? TargetId = null, bool? Enabled = null, IReadOnlyList<SystemDriverUpdateIdentity>? Updates = null);
-public sealed record SystemActionResponse(OptimizationOutcome Outcome, OptimizationOverview? Overview = null, DriverDownloadResult? Download = null, RestorePointResult? RestorePoint = null);
+public sealed record SystemActionResponse(OptimizationOutcome Outcome, OptimizationOverview? Overview = null, DriverDownloadResult? Download = null, RestorePointResult? RestorePoint = null,
+    bool HistoryFollows = false, string? HistoryWarning = null);
+internal sealed record SystemActionHistoryPage(int Number, List<AppliedOptimization> Changes, bool HasMore,
+    List<ToggleSetting>? Toggles = null, string? Error = null);
 
 public static class SystemActionPolicy
 {
     public const int MaximumRequestBytes = 2048;
     public const int MaximumResponseBytes = 1024 * 1024;
+    internal const int HistoryPageSize = 64;
+    internal const int MaximumHistoryPages = 4096;
+    internal const int MaximumHistoryBytes = 64 * 1024 * 1024;
     public static readonly TimeSpan SessionTimeout = TimeSpan.FromMinutes(2);
     internal static readonly JsonSerializerOptions Json = new()
     {

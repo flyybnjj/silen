@@ -65,15 +65,7 @@ public sealed partial class NativeOptimizationService : INativeOptimizationServi
         toggles.AddRange(InspectInputPreferences(entries));
         var schemes = platform.ReadPowerSchemes();
         var startup = ReadStartup(entries);
-        var changes = entries.OrderByDescending(x => x.AppliedAt).Select(x => new AppliedOptimization(x.Id, x.Title,
-            x.AppliedAt, CanUndo(x), x.State switch
-            {
-                "Completed" => "Aplicado. Se guardó el estado anterior exacto.",
-                "Undone" => "Se restauró el estado anterior.",
-                "Pending" => "Operación interrumpida; el respaldo permite revisar y recuperar los valores aplicados.",
-                "UndoPending" => "Restauración interrumpida; se puede volver a intentar.",
-                _ => "Aplicación parcial; el respaldo conserva los valores originales."
-            }, x.State == "Undone")).ToList();
+        var changes = entries.OrderByDescending(x => x.AppliedAt).Select(HistoryItem).ToList();
         changes.AddRange(journal.UntrustedLegacyEntries.Select(entry => new AppliedOptimization("legacy-system:" + entry.Id,
             "Respaldo antiguo del sistema", entry.AppliedAt, false,
             "No restaurable: procede del historial editable del usuario. Se conservó una copia para revisión; no autoriza cambios del equipo.")));
@@ -235,7 +227,7 @@ public sealed partial class NativeOptimizationService : INativeOptimizationServi
             }
             cancellationToken.ThrowIfCancellationRequested();
             entry.State = "UndoPending";
-            await journal.WriteAsync(entries, cancellationToken);
+            await journal.WriteAsync(entries, cancellationToken, pendingUndo: entry);
             var changed = false;
             foreach (var value in entry.Values)
             {
@@ -274,7 +266,7 @@ public sealed partial class NativeOptimizationService : INativeOptimizationServi
             if (entry.Values.Count == 0) return new OptimizationOutcome(true, "La preferencia ya tiene ese estado.");
             foreach (var value in entry.Values) { journal.DemandAuthority(value); value.Previous.Validate(); }
             entries.Add(entry);
-            await journal.WriteAsync(entries, token);
+            await journal.WriteAsync(entries, token, addingEntry: true);
             try
             {
                 foreach (var value in entry.Values)

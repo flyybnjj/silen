@@ -33,7 +33,8 @@ public sealed class SystemActionOptimizationService : INativeOptimizationService
         var result = await execute(request, token);
         if (result.Overview is { } overview)
             systemOverview = overview with { Toggles = overview.Toggles.Where(t => SystemActionPolicy.IsPrivilegedToggle(t.Id)).ToList(), StartupEntries = [], PowerSchemes = [] };
-        return result.Outcome;
+        return request.Action == SystemActionKind.InspectHistory && result.HistoryWarning is not null
+            ? result.Outcome with { Success = false } : result.Outcome;
     }
     public Task<OptimizationOutcome> RefreshSystemHistoryAsync(CancellationToken cancellationToken = default) =>
         ExecuteAsync(new(SystemActionKind.InspectHistory), cancellationToken);

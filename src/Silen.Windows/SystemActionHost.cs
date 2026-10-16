@@ -34,6 +34,7 @@ public static class SystemActionHost
             var digest = Convert.ToHexString(SHA256.HashData(bytes));
             if (!CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(digest), Encoding.ASCII.GetBytes(args[3].ToUpperInvariant()))) return 5;
             var request = SystemActionPolicy.Parse(bytes);
+            NativeOptimizationService? historySource = null;
             var response = await ExecuteWhileConnectedAsync(pipe, async operationToken =>
             {
                 if (request.Action == SystemActionKind.CreateRestorePoint)
@@ -49,22 +50,22 @@ public static class SystemActionHost
                 }
                 operationToken.ThrowIfCancellationRequested();
                 var native = NativeOptimizationService.CreateSystemExecutor();
+                historySource = native;
                 var outcome = request.Action switch
                 {
                     SystemActionKind.SetToggle => await native.SetToggleAsync(request.TargetId!, request.Enabled!.Value, operationToken),
                     SystemActionKind.ResumeWindowsUpdate => await native.ResumeWindowsUpdateAsync(operationToken),
                     SystemActionKind.Undo => await native.UndoAsync(request.TargetId!, operationToken),
-                    SystemActionKind.InspectHistory => new OptimizationOutcome(true, "Respaldos del sistema consultados con autorización."),
+                    SystemActionKind.InspectHistory => new OptimizationOutcome(true, "Consulta del historial autorizada."),
                     _ => throw new ArgumentException("Operación no permitida.")
                 };
-                var overview = await native.InspectAsync(operationToken);
-                overview = overview with { Toggles = overview.Toggles.Where(t => SystemActionPolicy.IsPrivilegedToggle(t.Id)).ToList(), StartupEntries = [], PowerSchemes = [] };
-                return new SystemActionResponse(outcome, overview);
+                return new SystemActionResponse(outcome);
             }, timeout.Token);
-            await WriteMessageAsync(pipe, JsonSerializer.SerializeToUtf8Bytes(response, SystemActionPolicy.Json), SystemActionPolicy.MaximumResponseBytes, timeout.Token);
+            await SystemActionConversation.SendAsync(pipe, response,
+                historySource is null ? null : historySource.ReadHistoryPagesAsync, timeout.Token);
             return 0;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or Win32Exception or InvalidOperationException or OperationCanceledException or System.Security.SecurityException) { return 6; }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or ArgumentException or Win32Exception or InvalidOperationException or OperationCanceledException or System.Security.SecurityException) { return 6; }
     }
 
     internal static async Task<T> ExecuteWhileConnectedAsync<T>(Stream connection, Func<CancellationToken, Task<T>> action, CancellationToken token)
@@ -100,15 +101,22 @@ public static class SystemActionHost
         await pipe.WaitForConnectionAsync(token);
         if (!GetNamedPipeClientProcessId(pipe.SafePipeHandle, out var clientId) || clientId != helper.Id)
             throw new UnauthorizedAccessException("El ejecutor conectado no corresponde al proceso autorizado.");
-        var machine = new StringBuilder(256);
-        if (!GetNamedPipeClientComputerName(pipe.SafePipeHandle, machine, (uint)machine.Capacity) ||
-            !string.Equals(machine.ToString().TrimStart('\\'), Environment.MachineName, StringComparison.OrdinalIgnoreCase))
+        if (!IsLocalPipeClient(pipe.SafePipeHandle))
             throw new UnauthorizedAccessException("El ejecutor requiere una conexión local.");
         DemandPeer(helper, requireElevated: true);
         await WriteMessageAsync(pipe, request, SystemActionPolicy.MaximumRequestBytes, token);
-        var response = await ReadMessageAsync(pipe, SystemActionPolicy.MaximumResponseBytes, token);
-        return JsonSerializer.Deserialize<SystemActionResponse>(response, SystemActionPolicy.Json)
-            ?? throw new InvalidDataException("El ejecutor no devolvió un resultado válido.");
+        return await SystemActionConversation.ReceiveAsync(pipe, token);
+    }
+
+    internal static bool IsLocalPipeClient(SafePipeHandle pipe)
+    {
+        var machine = new StringBuilder(256);
+        var identified = GetNamedPipeClientComputerName(pipe, machine, (uint)(machine.Capacity * sizeof(char)));
+        // ERROR_PIPE_LOCAL es una respuesta positiva sobre la localidad, no un
+        // fallo de autorización. Cualquier otro error sigue rechazándose.
+        return identified
+            ? string.Equals(machine.ToString().TrimStart('\\'), Environment.MachineName, StringComparison.OrdinalIgnoreCase)
+            : Marshal.GetLastPInvokeError() == 229;
     }
 
     private static void DemandPeer(Process peer, bool requireElevated)
@@ -132,7 +140,7 @@ public static class SystemActionHost
             throw new UnauthorizedAccessException("La conexión no pertenece al ejecutable de Silen.");
     }
 
-    private static async Task<byte[]> ReadMessageAsync(Stream stream, int maximum, CancellationToken token)
+    internal static async Task<byte[]> ReadMessageAsync(Stream stream, int maximum, CancellationToken token)
     {
         var header = new byte[4];
         await stream.ReadExactlyAsync(header, token);
@@ -142,7 +150,7 @@ public static class SystemActionHost
         await stream.ReadExactlyAsync(bytes, token);
         return bytes;
     }
-    private static async Task WriteMessageAsync(Stream stream, byte[] bytes, int maximum, CancellationToken token)
+    internal static async Task WriteMessageAsync(Stream stream, byte[] bytes, int maximum, CancellationToken token)
     {
         if (bytes.Length is 0 || bytes.Length > maximum) throw new InvalidDataException("Mensaje fuera del límite permitido.");
         var header = new byte[4];
