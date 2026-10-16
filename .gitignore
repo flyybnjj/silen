@@ -14,5 +14,6 @@ TestResults/
 *.pfx
 *.p12
 *.key
+*.dpapi
 id_rsa
 id_ed25519

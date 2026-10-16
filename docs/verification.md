@@ -17,7 +17,7 @@ La revisión independiente en [review-v2.md](review-v2.md) verificó las correcc
 
 ## Ejecutable publicado
 
-Se lanzó `artifacts/FlyyOptimizer-win-x64/FlyyOptimizer.exe --smoke-test artifacts/v2-final-verification`, con historial de prueba aislado:
+Se lanzó `artifacts/Silen-win-x64/Silen.exe --smoke-test artifacts/v2-final-verification`, con historial de prueba aislado:
 
 - Exit code 0 y `Success=true`.
 - 26 comprobaciones deterministas de interacción correctas, incluida limpieza de PID históricos reutilizados.
@@ -29,7 +29,7 @@ Se lanzó `artifacts/FlyyOptimizer-win-x64/FlyyOptimizer.exe --smoke-test artifa
 
 Evidencia: [status.json](../artifacts/v2-final-verification/status.json), [interaction-checks.json](../artifacts/v2-final-verification/interaction-checks.json), [snapshot.json](../artifacts/v2-final-verification/snapshot.json), [report.md](../artifacts/v2-final-verification/report.md) y PNG en el mismo directorio. Los artefactos de ejecución quedan fuera de Git.
 
-El ZIP contiene 439 entradas. El SHA-256 de su `FlyyOptimizer.dll` coincide con el ensamblado del ejecutable probado. ZIP final: 67.538.027 bytes; SHA-256 `FE0F0342A687F75667368B8AA49C2B60731526E462500C197A3C3CE2C9CF02EC`.
+El ZIP contiene 439 entradas. El SHA-256 de su `Silen.dll` coincide con el ensamblado del ejecutable probado. ZIP final: 67.538.027 bytes; SHA-256 `FE0F0342A687F75667368B8AA49C2B60731526E462500C197A3C3CE2C9CF02EC`.
 
 ## Límites comprobables
 

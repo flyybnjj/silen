@@ -30,8 +30,8 @@ El fixture `presentmon-2.3.1-gold-excerpt.csv` contiene la cabecera y tres filas
 
 Comandos ejecutados con `C:\Users\avalo\.codex\runtimes\dotnet-10-sdk\dotnet.exe`:
 
-- `test tests/FlyyOptimizer.Gaming.Tests/FlyyOptimizer.Gaming.Tests.csproj -c Release --no-restore`: **49 correctas, 0 fallidas, 0 omitidas**, 45 segundos; salida 0.
-- `build src/FlyyOptimizer.Gaming/FlyyOptimizer.Gaming.csproj -c Release --no-restore -warnaserror`: **0 advertencias, 0 errores**; salida 0.
-- `test FlyyOptimizer.sln -c Release`: Gaming 49/49 y Core 23/23; se observó una prueba Windows todavía en implementación: `SensorSafetyTests.Read_only_scan_disables_the_providers_that_use_a_kernel_sensor_driver`, con `NotImplementedException` en `HardwareSensors.CreateReadOnlyComputer`. Se comunicó al agente principal; la verificación final de toda la solución corresponde a la integración.
+- `test tests/Silen.Gaming.Tests/Silen.Gaming.Tests.csproj -c Release --no-restore`: **49 correctas, 0 fallidas, 0 omitidas**, 45 segundos; salida 0.
+- `build src/Silen.Gaming/Silen.Gaming.csproj -c Release --no-restore -warnaserror`: **0 advertencias, 0 errores**; salida 0.
+- `test Silen.sln -c Release`: Gaming 49/49 y Core 23/23; se observó una prueba Windows todavía en implementación: `SensorSafetyTests.Read_only_scan_disables_the_providers_that_use_a_kernel_sensor_driver`, con `NotImplementedException` en `HardwareSensors.CreateReadOnlyComputer`. Se comunicó al agente principal; la verificación final de toda la solución corresponde a la integración.
 
 La compatibilidad comprobada es el parser de datos oficiales y el contrato CLI documentado de 2.3.1 mediante el colector de pruebas. No se ejecutó una captura ETW real con un binario oficial instalado ni se midieron FPS del equipo; esa verificación requiere seleccionar la consola y un juego activo. No se aplicaron optimizaciones, se instalaron drivers ni se modificaron ajustes del sistema durante estas pruebas.

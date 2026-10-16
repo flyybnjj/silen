@@ -4,5 +4,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <Deterministic>true</Deterministic>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <!-- La publicación single-file añade ILLink implícitamente a todo el grafo.
+         Mantener su contrato separado evita mutar los locks del build normal. -->
+    <NuGetLockFilePath Condition="'$(PublishSingleFile)' == 'true'">$(MSBuildProjectDirectory)/packages.portable.lock.json</NuGetLockFilePath>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
   </PropertyGroup>
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'Silen.Windows'">
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)src/Silen.Windows/UpdateSigningPublicKey.pem" LogicalName="Silen.UpdateSigningPublicKey.pem" />
+  </ItemGroup>
 </Project>

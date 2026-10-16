@@ -1,6 +1,6 @@
-# FlyyOptimizer autocontenido y acciones útiles
+# Silen autocontenido y acciones útiles
 
-El usuario pide que Mejoras/Gaming hagan acciones útiles como WinUtil/Optimizer y que solo tenga que instalar FlyyOptimizer. Se conserva WPF y la distribución .NET self-contained. Se integra la consola oficial standalone de PresentMon, con versión/hash/licencia fijados y comprobación local; no se ejecutan WinUtil/Optimizer ni se solicita al usuario conseguir herramientas externas.
+El usuario pide que Mejoras/Gaming hagan acciones útiles como WinUtil/Optimizer y que solo tenga que instalar Silen. Se conserva WPF y la distribución .NET self-contained. Se integra la consola oficial standalone de PresentMon, con versión/hash/licencia fijados y comprobación local; no se ejecutan WinUtil/Optimizer ni se solicita al usuario conseguir herramientas externas.
 
 Primera tanda propia: Modo Juego, capturas Xbox y animaciones como controles separados; seleccionar un plan de energía existente; habilitar/deshabilitar entradas Run del usuario actual, conservando su estado; limpiar archivos temporales del usuario con vista previa y selección. Cada ajuste muestra estado y resultado, guarda su estado previo exacto y permite deshacer con comprobación de conflictos. No se llama restoredefaultschemes ni se fuerza un plan universal de rendimiento en portátiles.
 
@@ -10,7 +10,7 @@ El análisis y los smoke tests siguen siendo de lectura del equipo. Las pruebas 
 
 No se incorpora aún un gestor general de actualización de otras apps: WinGet no se asume disponible y no será requisito para analizar, optimizar o capturar. Drivers conservan sus fuentes oficiales y su instalación independiente según hardware.
 
-La prueba real del colector encontró acceso denegado de ETW en este equipo. Ante ese error y solo si el token actual no está elevado, Gaming ofrece abrir el ejecutable propio de Flyy como administrador mediante un clic explícito. Se conserva la ventana original, no se abre otra herramienta ni se inicia UAC automáticamente. Cancelar el diálogo de Windows muestra un resultado comprensible y permite reintentar.
+La prueba real del colector encontró acceso denegado de ETW en este equipo. Ante ese error y solo si el token actual no está elevado, Gaming ofrece abrir el ejecutable propio de Silen como administrador mediante un clic explícito. Se conserva la ventana original, no se abre otra herramienta ni se inicia UAC automáticamente. Cancelar el diálogo de Windows muestra un resultado comprensible y permite reintentar.
 
 ## Dirección visual añadida por el usuario
 

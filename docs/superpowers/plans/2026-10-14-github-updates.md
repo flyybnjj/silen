@@ -12,9 +12,9 @@
 
 ## Global constraints
 
-- Public repository `flyybnjj/flyyoptimizer`; exact asset `FlyyOptimizer-win-x64.zip`.
+- Public repository `flyybnjj/flyyoptimizer`; exact asset `Silen-win-x64.zip`.
 - Automatic download, explicit **Reiniciar y actualizar** only; diagnostics never auto-check.
-- Keep `FlyyOptimizer.exe` plus `Archivos`, original local reports and optimization journals.
+- Keep `Silen.exe` plus `Archivos`, original local reports and optimization journals.
 - Stable newer version, HTTPS official repo and server-provided SHA-256 required.
 - No source comments, embedded credentials, implicit elevation or external scripts.
 - No real Windows optimization or replacement of the user installation in tests.
@@ -29,7 +29,7 @@
 
 ## Task 1: Windows release, cache and installer services
 
-**Files:** create `src/FlyyOptimizer.Windows/AppUpdateModels.cs`, `AppUpdateService.cs`, `PortableAppUpdater.cs` and focused tests in `tests/FlyyOptimizer.Windows.Tests/`.
+**Files:** create `src/Silen.Windows/AppUpdateModels.cs`, `AppUpdateService.cs`, `PortableAppUpdater.cs` and focused tests in `tests/Silen.Windows.Tests/`.
 
 **Shared interfaces:**
 
@@ -62,7 +62,7 @@ public static class PortableAppUpdater
 
 ## Task 2: WPF integration and release docs
 
-**Files:** create `src/FlyyOptimizer.App/AppUpdateViewModel.cs`; modify `ViewModelServices.cs`, `MainViewModel.cs`, `MainWindow.xaml`, `MainWindow.xaml.cs`, `App.xaml.cs`, `InteractionSmokeChecks.cs`, App csproj and README.
+**Files:** create `src/Silen.App/AppUpdateViewModel.cs`; modify `ViewModelServices.cs`, `MainViewModel.cs`, `MainWindow.xaml`, `MainWindow.xaml.cs`, `App.xaml.cs`, `InteractionSmokeChecks.cs`, App csproj and README.
 
 Use injected `IAppUpdateService` and an injected `Func<PreparedAppUpdate, ProcessStartInfo>` for tests. The app view-model exposes installed version, state/status/progress, retry/check command, ready package and a restart command/event. The root view-model owns cancellation on close and only allows restart when idle. MainWindow starts the prepared helper and then closes through the normal close lifecycle; failure to start leaves the main app open and retryable. The helper branch is handled before normal UI creation. Only normal zero-argument and `--drivers` startup calls the auto-check/download flow.
 

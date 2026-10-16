@@ -1,6 +1,6 @@
 # Verificación del perfil Fortnite — 14 de octubre de 2026
 
-Se corrigió la navegación de Inicio/Energía/Temporales/Modo Juego para usar controles internos y se incorporó Optimizar PC para Fortnite con detección, selección, progreso, resultados y restauración. Modo Juego utiliza el fragmento oficial WinUtil fijado y embebido; los demás pasos son implementación de Flyy. No se ejecuta otra aplicación de optimización ni se descarga un script remoto.
+Se corrigió la navegación de Inicio/Energía/Temporales/Modo Juego para usar controles internos y se incorporó Optimizar PC para Fortnite con detección, selección, progreso, resultados y restauración. Modo Juego utiliza el fragmento oficial WinUtil fijado y embebido; los demás pasos son implementación de Silen. No se ejecuta otra aplicación de optimización ni se descarga un script remoto.
 
 ## Pruebas
 
@@ -19,7 +19,7 @@ Las **82 comprobaciones WPF** del paquete final pasan con fixtures. Incluyen el 
 
 ## Paquete publicado
 
-Se ejecutó `FlyyOptimizer.exe --smoke-test` con PATH limitado a System32, sin las variables de SDK/DOTNET_ROOT y con búsqueda multilevel de .NET deshabilitada. `artifacts/verify-published-fortnite-final.ps1` reproduce el lanzamiento.
+Se ejecutó `Silen.exe --smoke-test` con PATH limitado a System32, sin las variables de SDK/DOTNET_ROOT y con búsqueda multilevel de .NET deshabilitada. `artifacts/verify-published-fortnite-final.ps1` reproduce el lanzamiento.
 
 - Salida 0 y Success=true; CapturedAt `2026-10-14T14:28:29-03:00`.
 - Perfil Fortnite cargado; instalación real detectada en `C:\Program Files\Epic Games\Fortnite`, cinco opciones disponibles según el estado actual.

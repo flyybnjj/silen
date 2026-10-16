@@ -21,7 +21,7 @@ La suite completa y la publicación del paquete quedan a cargo del agente princi
 
 ## Integración de permisos ETW
 
-La verificación del colector publicado devolvió código 6 y acceso denegado al iniciar la sesión ETW con el token normal. La app ofrece «Abrir Flyy como administrador» solo después de un error de permisos y cuando su propio proceso aún no está elevado. El clic solicita a Windows abrir únicamente `AppContext.BaseDirectory/FlyyOptimizer.exe` mediante `runas`, sin argumentos y sin cerrar ni transferir la sesión original. No se solicita UAC automáticamente al fallar una captura, analizar ni iniciar la app.
+La verificación del colector publicado devolvió código 6 y acceso denegado al iniciar la sesión ETW con el token normal. La app ofrece «Abrir Silen como administrador» solo después de un error de permisos y cuando su propio proceso aún no está elevado. El clic solicita a Windows abrir únicamente `AppContext.BaseDirectory/Silen.exe` mediante `runas`, sin argumentos y sin cerrar ni transferir la sesión original. No se solicita UAC automáticamente al fallar una captura, analizar ni iniciar la app.
 
 La operación usa el mismo bloqueo y espera de cierre de las herramientas. El error 1223 de Windows muestra la cancelación de UAC junto a la captura y permite reintentar. Un proceso que ya está elevado conserva el error de captura sin ofrecer otra elevación.
 

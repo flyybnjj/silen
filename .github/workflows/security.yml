@@ -1,0 +1,38 @@
+name: Seguridad y dependencias
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          global-json-file: global.json
+      - name: Buscar secretos sin imprimir valores
+        shell: pwsh
+        run: ./scripts/scan-secrets.ps1
+      - name: Restaurar versiones transitivas fijadas y auditar
+        shell: pwsh
+        run: |
+          dotnet restore Silen.sln --locked-mode -p:NuGetAudit=true -p:NuGetAuditMode=all '-p:WarningsAsErrors=NU1901%3BNU1902%3BNU1903%3BNU1904'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet restore src/Silen.App/Silen.App.csproj -r win-x64 -p:SelfContained=true -p:PublishSingleFile=true --locked-mode -p:NuGetAudit=true -p:NuGetAuditMode=all '-p:WarningsAsErrors=NU1901%3BNU1902%3BNU1903%3BNU1904'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet restore Silen.sln --locked-mode
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet restore scripts/signing/SigningTool.csproj --locked-mode -p:NuGetAudit=true -p:NuGetAuditMode=all
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Pruebas
+        shell: pwsh
+        run: dotnet test Silen.sln -c Release --no-restore
+      - name: Compilar herramienta de firma local
+        shell: pwsh
+        run: dotnet build scripts/signing/SigningTool.csproj -c Release --no-restore

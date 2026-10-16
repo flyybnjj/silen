@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-16T13:18:35.7143532Z",
+  "title": "Sistema de diseño de Silen",
+  "extensions": {
+    "platform": "windows-wpf",
+    "colorMeta": {
+      "linen": {
+        "role": "neutral",
+        "displayName": "Lino"
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Tinta"
+      },
+      "brick": {
+        "role": "primary",
+        "displayName": "Rojo ladrillo / terracota"
+      }
+    },
+    "typographyMeta": {
+      "heading": {
+        "purpose": "Título general existente; 34/44."
+      },
+      "summary-heading": {
+        "purpose": "Título compacto de Resumen; 30/40."
+      },
+      "summary-section": {
+        "purpose": "Sección principal de Resumen; 22/30."
+      },
+      "summary-metric": {
+        "purpose": "Dato observado con cifras tabulares; 30/38."
+      },
+      "body": {
+        "purpose": "Lectura y controles; única familia incrustada."
+      },
+      "small": {
+        "purpose": "Metadatos y explicación secundaria, nunca toda la interfaz."
+      }
+    },
+    "nativeResources": {
+      "theme": "src/Silen.App/Theme.xaml",
+      "themes": "src/Silen.App/ThemeManager.cs",
+      "wordmark": "src/Silen.App/Brand.xaml",
+      "mascot": "src/Silen.App/Assets/Brand/silen-bloom.png",
+      "summary": "src/Silen.App/MainWindow.xaml"
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "BLOOM",
+        "value": "intro 1.8s; ambiente 8s; aleteo 4s; 24fps",
+        "purpose": "Presencia ambiental existente; pausa al ocultar, minimizar, desactivar, trabajar y cerrar; reposo con reducir movimiento y sin ilustración en alto contraste."
+      }
+    ],
+    "windowSizes": {
+      "initial": "1240x820",
+      "minimum": "1000x680",
+      "units": "DIP de WPF"
+    },
+    "layout": {
+      "navigation": "sidebar",
+      "sidebarWidth": 205,
+      "contentInset": 36,
+      "maxContentWidth": 1120,
+      "spacing": [
+        4,
+        8,
+        12,
+        16,
+        20,
+        24
+      ],
+      "summaryScroll": "Una superficie desplazable; Aplicar fuera de ella."
+    },
+    "themes": {
+      "light": "Tokens linen/ink/brick y neutros.",
+      "dark": "Tokens dark-* del frontmatter.",
+      "highContrast": "SystemColors de Windows; tiene prioridad."
+    },
+    "nativeComponents": [
+      {
+        "name": "Acción principal",
+        "source": "Theme.xaml",
+        "resource": "PrimaryButton",
+        "xaml": "<Button Content=\"Aplicar selección\" Style=\"{StaticResource PrimaryButton}\" />"
+      },
+      {
+        "name": "Acción secundaria",
+        "source": "Theme.xaml",
+        "resource": "Button",
+        "xaml": "<Button Content=\"Actualizar detalles\" />"
+      },
+      {
+        "name": "Acción auxiliar de Resumen",
+        "source": "MainWindow.xaml",
+        "resource": "QuietButton",
+        "xaml": "<Button Content=\"Recomendados\" Style=\"{StaticResource QuietButton}\" BorderThickness=\"0\" Padding=\"8,8\" FontWeight=\"Normal\" />"
+      },
+      {
+        "name": "Campo",
+        "source": "Theme.xaml",
+        "resource": "TextBox",
+        "xaml": "<TextBox AutomationProperties.Name=\"Buscar\" />"
+      },
+      {
+        "name": "Navegación",
+        "source": "Theme.xaml",
+        "resource": "NavigationItem",
+        "xaml": "<ListBox ItemContainerStyle=\"{StaticResource NavigationItem}\" />"
+      },
+      {
+        "name": "Lecturas de Resumen",
+        "source": "MainWindow.xaml",
+        "resource": "SummaryMetric",
+        "xaml": "<TextBlock Text=\"{Binding CpuValue}\" Style=\"{StaticResource SummaryMetric}\" />"
+      }
+    ],
+    "previewLimits": "Esta app usa XAML. No se generan equivalentes HTML/CSS ni se afirma compatibilidad con el detector web.",
+    "designFingerprint": "sha256:6e1d6cf3f81acd886725dc7505d06d9616e58b0ea930fa53b6ed0be4263c2e02"
+  },
+  "components": [
+    {
+      "name": "Acción principal",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Preparar o aplicar por etapas, sin duplicación."
+    },
+    {
+      "name": "Acción secundaria",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Contorno neutro para acciones auxiliares de la tarea."
+    },
+    {
+      "name": "Acción discreta",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Auxiliar plana dentro del tratamiento de Resumen."
+    },
+    {
+      "name": "Campo nativo",
+      "kind": "input",
+      "description": "Borde definido, foco visible y recursos de tema."
+    },
+    {
+      "name": "Navegación lateral",
+      "kind": "nav",
+      "description": "Texto, selección semibold y marca fina."
+    }
+  ],
+  "narrative": {
+    "northStar": "Silencio, calma y rendimiento discreto.",
+    "overview": "Una herramienta tranquila y precisa, con serif incrustada, superficies cálidas y un único acento rojo. Resumen es referencia de composición; el resto se adapta por tarea.",
+    "keyCharacteristics": [
+      "Una familia",
+      "Jerarquía de acciones",
+      "Datos reales",
+      "Espacio por proximidad",
+      "Líneas finas"
+    ],
+    "rules": [
+      {
+        "name": "Una sola voz",
+        "section": "Typography",
+        "body": "Variar tamaño, peso, proximidad y tono antes de añadir otra familia."
+      }
+    ],
+    "dos": [
+      "Conservar una sola familia, la paleta y los recursos originales de identidad.",
+      "Reservar el acento para la acción principal y estados relevantes.",
+      "Mantener jerarquía visible, plurales correctos y frases literales.",
+      "Conservar datos desconocidos, advertencias, confirmaciones y restauración."
+    ],
+    "donts": [
+      "No introducir gradientes, neón, vidrio, brillos ni sombras decorativas.",
+      "No usar cohetes, rayos, escudos, llamas ni emojis como iconos.",
+      "No ocultar la acción principal para ganar aire ni esconder efectos de ajustes.",
+      "No extrapolar una composición a otra vista sin revisar su tarea."
+    ]
+  }
+}

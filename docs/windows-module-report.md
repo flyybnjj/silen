@@ -1,4 +1,4 @@
-# FlyyOptimizer.Windows — implementación y verificación
+# Silen.Windows — implementación y verificación
 
 Implementado `net10.0-windows`, con referencia exclusiva a los contratos de Core. La adquisición corre fuera del hilo de interfaz. Las fuentes fallidas dejan notas legibles y conservan los demás datos.
 
@@ -44,10 +44,10 @@ Documentación: [Search](https://learn.microsoft.com/en-us/windows/win32/api/wua
 
 SDK utilizado: `C:\Users\avalo\.codex\runtimes\dotnet-10-sdk\dotnet.exe`.
 
-`dotnet test tests/FlyyOptimizer.Windows.Tests/FlyyOptimizer.Windows.Tests.csproj -c Release --no-restore`: **60 correctas, 0 fallidas**, unos 14,7 segundos. Se observaron los fallos antes de implementar normalización, validación de acciones, cancelación, exclusión de kernel, identificadores de sensores CPU y redacción de nombres con espacios.
+`dotnet test tests/Silen.Windows.Tests/Silen.Windows.Tests.csproj -c Release --no-restore`: **60 correctas, 0 fallidas**, unos 14,7 segundos. Se observaron los fallos antes de implementar normalización, validación de acciones, cancelación, exclusión de kernel, identificadores de sensores CPU y redacción de nombres con espacios.
 
 El test de integración real es de solo lectura y no abre ajustes ni inicia una consulta de red. Resultado: 239 dispositivos/drivers, una unidad, siete entradas de inicio, veinte procesos y 49 interfaces de red. Diez lecturas de CPU, memoria y temperatura GPU. Temperatura CPU ausente y conservada como desconocida. La comprobación de privacidad no encontró el perfil actual en comandos exportados.
 
 Se ejecutó además una consulta WUA real mediante un console probe temporal con cancelación a 45 segundos, fuera de la suite. Completó antes del límite con **Success=true, UpdateCount=3**. Solo se guardaron éxito, cantidad y mensaje en `artifacts/windows-driver-probe-result.json`; no se instaló ni descargó ninguna oferta.
 
-`dotnet build src/FlyyOptimizer.Windows/FlyyOptimizer.Windows.csproj -c Release --no-restore`: **0 advertencias, 0 errores**. La integración y ejecución de la suite completa de solución quedan a cargo del agente raíz.
+`dotnet build src/Silen.Windows/Silen.Windows.csproj -c Release --no-restore`: **0 advertencias, 0 errores**. La integración y ejecución de la suite completa de solución quedan a cargo del agente raíz.

@@ -1,0 +1,17 @@
+<UserControl x:Class="Silen.App.SummaryErrorNotice" x:Name="Notice" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Border x:Name="Surface" Background="{DynamicResource ErrorSurface}" BorderBrush="{DynamicResource ErrorLine}" BorderThickness="1" CornerRadius="4">
+    <Grid>
+      <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+      <Border x:Name="Mark" Width="3" Background="{DynamicResource ErrorText}" Margin="0,8,0,8" Visibility="{Binding ShowMark, ElementName=Notice, Converter={StaticResource Visible}}" />
+      <StackPanel Grid.Column="1" Margin="14,12">
+        <TextBlock x:Name="ErrorHeading" Text="Error" FontWeight="SemiBold" Foreground="{DynamicResource ErrorText}" />
+        <ScrollViewer MaxHeight="104" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,4,0,0">
+          <TextBlock Text="{Binding Message, ElementName=Notice}" Foreground="{DynamicResource ErrorText}" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
+        </ScrollViewer>
+      </StackPanel>
+      <Button Grid.Column="2" Content="Cerrar aviso" Command="{Binding DismissCommand, ElementName=Notice}" VerticalAlignment="Top" Margin="0,12,14,12">
+        <Button.Style><Style TargetType="Button" BasedOn="{StaticResource QuietButton}"><Style.Triggers><DataTrigger Binding="{Binding DismissCommand, ElementName=Notice}" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers></Style></Button.Style>
+      </Button>
+    </Grid>
+  </Border>
+</UserControl>

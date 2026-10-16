@@ -1,9 +1,0 @@
-<Window x:Class="FlyyOptimizer.App.OptimizationConfirmation" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Style="{StaticResource {x:Type Window}}" Title="Optimizar PC" Icon="Assets/Flyy.ico" Width="490" SizeToContent="Height" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
-  <Border Background="{StaticResource Raised}" Padding="28"><StackPanel>
-    <Image Source="{StaticResource FlyyLogo}" Width="42" Height="42" HorizontalAlignment="Left" Margin="0,0,0,18" />
-    <TextBlock Text="¿Optimizar este PC?" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,12" />
-    <TextBlock Text="Aplicaremos los ajustes disponibles de energía, segundo plano y Fortnite. La calidad gráfica y los efectos del escritorio pueden reducirse." Style="{StaticResource MutedText}" />
-    <TextBlock Text="Guardaremos los ajustes anteriores para restaurarlos en Mejoras. Algunas apps pueden dejar de notificar al cerrarlas. El modo de energía puede aumentar consumo y temperatura." Style="{StaticResource Small}" Margin="0,12,0,22" />
-    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"><Button Content="Ahora no" IsCancel="True" Margin="0,0,10,0" /><Button Content="Sí, optimizar" Click="Accept" Style="{StaticResource PrimaryButton}" /></StackPanel>
-  </StackPanel></Border>
-</Window>

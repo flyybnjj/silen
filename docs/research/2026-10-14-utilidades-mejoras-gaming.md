@@ -2,7 +2,7 @@
 
 Investigación del 14 de octubre de 2026 a partir de la petición de buscar opciones como Optimizer y Chris Titus Tools. Este documento propone funciones; no añade esas funciones al ejecutable existente.
 
-## Situación actual de FlyyOptimizer
+## Situación actual de Silen
 
 Mejoras muestra hallazgos y abre Configuración de Windows mediante `WindowsActions`. Gaming importa CSV o captura con una consola PresentMon que el usuario debe conseguir y seleccionar. Son herramientas de diagnóstico y orientación; falta un flujo que aplique opciones seleccionadas, compruebe el resultado y permita restaurar ajustes.
 
@@ -26,7 +26,7 @@ Cada ajuste necesita estado actual, alcance, selección, aplicar, lectura de com
 ## Diferencias del código que conviene tener presentes
 
 - WinUtil actual tiene presets Standard/Minimal/Advanced; su FAQ de gaming conserva referencias antiguas a Desktop. Fuente vigente: [preset.json](https://github.com/ChrisTitusTech/winutil/blob/main/config/preset.json). La investigación fijó WinUtil a [07ccd8e2](https://github.com/ChrisTitusTech/winutil/tree/07ccd8e2e755a706f31569808b31f5b77acad6a9).
-- Desactivar Ultimate Performance en WinUtil llama `/restoredefaultschemes`; Flyy debería restaurar solo el GUID que estaba activo. Fuente: [Invoke-WPFUltimatePerformance.ps1](https://github.com/ChrisTitusTech/winutil/blob/main/functions/public/Invoke-WPFUltimatePerformance.ps1).
+- Desactivar Ultimate Performance en WinUtil llama `/restoredefaultschemes`; Silen debería restaurar solo el GUID que estaba activo. Fuente: [Invoke-WPFUltimatePerformance.ps1](https://github.com/ChrisTitusTech/winutil/blob/main/functions/public/Invoke-WPFUltimatePerformance.ps1).
 - El Undo de WinUtil utiliza valores originales declarados en configuración, que pueden diferir de lo que tenía ese usuario. Fuente: [Invoke-WinUtilTweaks.ps1](https://github.com/ChrisTitusTech/winutil/blob/main/functions/private/Invoke-WinUtilTweaks.ps1).
 - Optimizer agrupa Modo Juego, HAGS y opciones de pantalla completa; conviene separar controles. Sus ajustes `SystemResponsiveness=1` y `GPU Priority` no justifican una promesa de mejora: Microsoft indica que el primero se convierte en 20 y que el segundo no se utiliza. Fuentes: [OptimizeHelper.cs](https://github.com/hellzerg/optimizer/blob/master/Optimizer/OptimizeHelper.cs), [MMCSS de Microsoft](https://learn.microsoft.com/en-us/windows/win32/procthread/multimedia-class-scheduler-service).
 - Las capturas Xbox y su grabación de fondo tienen alcance distinto; el bloque de Optimizer también desactiva captura manual. La opción debe explicar exactamente qué cambia. Fuentes: [DisableGameBar](https://github.com/hellzerg/optimizer/blob/master/Optimizer/OptimizeHelper.cs#L1047), [AllowGameDVR de Microsoft](https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-applicationmanagement#allowgamedvr).

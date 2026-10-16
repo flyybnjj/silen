@@ -6,7 +6,7 @@ Revisión limitada al cambio de interacción/OEM del 14 de octubre de 2026, con 
 
 ### P2 — Identidades nulas del historial interrumpían la búsqueda OEM
 
-Ubicaciones originales: `src/FlyyOptimizer.Windows/OemDriverService.cs:36`, `:38`, `:119` y `:121`; entrada aceptada en `src/FlyyOptimizer.Core/ReportStore.cs:65–73`.
+Ubicaciones originales: `src/Silen.Windows/OemDriverService.cs:36`, `:38`, `:119` y `:121`; entrada aceptada en `src/Silen.Core/ReportStore.cs:65–73`.
 
 Un snapshot JSON con `Machine.Model = null`, `Machine.Manufacturer = null` o `Machine.SystemSku = null` supera la validación estructural de `ReportStore.LoadAsync`. La nueva búsqueda invocaba `.Trim()` en esos valores. Reproducción offline con guardado/carga reales: los tres informes se cargan y la consulta lanza `NullReferenceException`, antes de construir un fallback o aprovechar un SKU Lenovo válido. La app captura el error, pero no obtiene el catálogo o portal para el informe aceptado.
 
@@ -14,7 +14,7 @@ Estado: **corregido y verificado independientemente**. El servicio normaliza fab
 
 ### P2 — Una respuesta de serie contradictoria se aceptaba como modelo identificado
 
-Ubicaciones originales: `src/FlyyOptimizer.Windows/OemDriverService.cs:69–76` y `:167–174`.
+Ubicaciones originales: `src/Silen.Windows/OemDriverService.cs:69–76` y `:167–174`.
 
 Para una solicitud por serie `PFTEST1234`, el fixture oficial de producto se modifica únicamente para devolver `Serial = PFWRONG5678`. La búsqueda informa `Success = true`, `ModelMatched = true` y dos paquetes. El parser descarta `Serial`, y la comprobación de identidad solo compara el tipo de máquina en búsquedas sin serie. Una respuesta que contradice explícitamente la serie autorizada debe rechazarse antes de descargar el catálogo.
 
@@ -22,7 +22,7 @@ Estado: **corregido y verificado independientemente**. El parser conserva la ser
 
 ### P2 — Cargar un informe antiguo ofrecía sus PID archivados para una captura actual
 
-Ubicaciones originales: `src/FlyyOptimizer.App/MainViewModel.cs:303`, `:456–461`, `:496–497`.
+Ubicaciones originales: `src/Silen.App/MainViewModel.cs:303`, `:456–461`, `:496–497`.
 
 `ApplySnapshot(result, false)` vuelve a poblar el selector Gaming con los procesos archivados. La comprobación de captura solo confirma que el PID siga existiendo. Si Windows reutilizó el número, la elección conserva el nombre del juego antiguo pero apunta a otro proceso. Reproducción sin captura: un informe del 1 de enero con nombre `ArchivedGame` y PID del proceso de prueba se ofrece como selección; los inputs se aceptan y el PID corresponde al proceso actual `UIReview`. No se invocó `CaptureCommand` ni se ejecutó PresentMon.
 
@@ -42,7 +42,7 @@ Estado: **corregido y verificado independientemente**. `MainViewModel.cs:303–3
 
 ## Evidencia y límites
 
-Proyectos temporales: `C:\Users\avalo\AppData\Local\Temp\FlyyOptimizer-review-v2-5e2f44aadacd433c8f605033b6bc0305\Review.csproj` y subdirectorio `ui\UIReview.csproj`. Ambos enlazan archivos fuente actuales; el probe OEM utiliza `System.Management.dll` únicamente como referencia y reemplaza HTTP y lector de serie por fixtures. El probe UI no abre una ventana o herramienta.
+Proyectos temporales: `C:\Users\avalo\AppData\Local\Temp\Silen-review-v2-5e2f44aadacd433c8f605033b6bc0305\Review.csproj` y subdirectorio `ui\UIReview.csproj`. Ambos enlazan archivos fuente actuales; el probe OEM utiliza `System.Management.dll` únicamente como referencia y reemplaza HTTP y lector de serie por fixtures. El probe UI no abre una ventana o herramienta.
 
 No se verificó ETW de un juego real, un lookup de serie real ni un OEM adicional mediante API. La consulta real modelo-only de Lenovo 83GS, pruebas y renders completos pertenecen a la evidencia del integrador. Esta revisión no vuelve a juzgar defectos baseline ya corregidos ni estética de interfaz.
 

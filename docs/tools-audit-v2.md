@@ -1,12 +1,12 @@
 # Auditoría funcional de herramientas — 14 octubre 2026
 
-Se revisaron todas las herramientas de la versión nativa WPF. Las reproducciones propias usan los DLL publicados en `artifacts/FlyyOptimizer-win-x64`, para no confundir fallos de esa versión con cambios concurrentes en el código. No se modificaron los módulos de aplicación, Core, Windows o Gaming ni Git. No se aplicaron ajustes, instalaron drivers o ejecutaron juegos.
+Se revisaron todas las herramientas de la versión nativa WPF. Las reproducciones propias usan los DLL publicados en `artifacts/Silen-win-x64`, para no confundir fallos de esa versión con cambios concurrentes en el código. No se modificaron los módulos de aplicación, Core, Windows o Gaming ni Git. No se aplicaron ajustes, instalaron drivers o ejecutaron juegos.
 
 ## Hallazgos reproducidos
 
 ### P2 — El proveedor Microsoft de drivers del sistema se confunde con un equipo Surface
 
-Ubicación: `src/FlyyOptimizer.Windows/WindowsActions.cs:29` y `src/FlyyOptimizer.App/MainViewModel.cs:392` (resolución `ManufacturerUrl` en el checkout durante la auditoría).
+Ubicación: `src/Silen.Windows/WindowsActions.cs:29` y `src/Silen.App/MainViewModel.cs:392` (resolución `ManufacturerUrl` en el checkout durante la auditoría).
 
 Al pulsar **Fabricante** en un dispositivo cuyo fabricante no está reconocido pero cuyo proveedor es Microsoft, la aplicación abre `https://support.microsoft.com/surface`. La identidad del proveedor de un driver de Windows no identifica un dispositivo Surface. En el inventario real del equipo **LENOVO 83GS**, 144 de 225 dispositivos se resolvieron a Surface, incluidos ACPI Fan, ACPI Lid y ACPI Power Button. El destino existe, pero no corresponde a esos dispositivos. La página está identificada como [soporte Surface de Microsoft](https://support.microsoft.com/en-us/surface/).
 
@@ -14,7 +14,7 @@ Dirección de corrección: separar soporte del equipo Microsoft/Surface de los d
 
 ### P2 — Dos instancias pueden perder registros del historial de guías
 
-Ubicación: `src/FlyyOptimizer.Core/ReportStore.cs:10`, lectura y sustitución en `:86–88`.
+Ubicación: `src/Silen.Core/ReportStore.cs:10`, lectura y sustitución en `:86–88`.
 
 El semáforo `actionGate` es de una instancia de `ReportStore`. Dos ventanas/procesos comparten `actions.json` pero pueden leer el mismo estado, añadir por separado y sustituirlo. La escritura atómica evita JSON parcial; no evita sobrescribir una entrada recién guardada por otro escritor. Reproducción con dos `ReportStore` independientes sobre el mismo directorio y 40 operaciones paralelas: **20 registros conservados, 20 perdidos**, sin excepción. La aplicación publicada admite múltiples instancias.
 
@@ -22,7 +22,7 @@ Dirección de corrección: coordinar lectura, modificación y sustitución media
 
 ### P3 — Cancelar una importación CSV activa espera a que termine el parser
 
-Ubicación: `src/FlyyOptimizer.App/MainViewModel.cs:440`, `src/FlyyOptimizer.Gaming/PresentMonCsv.cs:48`, también el parse posterior a captura en `src/FlyyOptimizer.Gaming/GamingCapture.cs:97`.
+Ubicación: `src/Silen.App/MainViewModel.cs:440`, `src/Silen.Gaming/PresentMonCsv.cs:48`, también el parse posterior a captura en `src/Silen.Gaming/GamingCapture.cs:97`.
 
 El token se pasa a `Task.Run` y se comprueba después, pero el parser síncrono no recibe el token. Una vez iniciado el trabajo, cancelar evita publicar el resultado pero no detiene la lectura/cálculo. Reproducción con un CSV permitido de **62.050.039 bytes / 850.000 frames**: cancelación solicitada a los 58 ms; seguía ocupado a los 250 ms y terminó a los 2.465 ms. El cierre esperó correctamente esta operación. En una máquina más lenta, la espera puede ser mayor.
 
@@ -60,7 +60,7 @@ La captura ETW de un juego real permanece sin verificar: no se proporcionó cons
 
 ## Verificación de correcciones Core/Gaming en Release
 
-Seguimiento contra los DLL actualizados de `src/FlyyOptimizer.Core/bin/Release/net10.0` y `src/FlyyOptimizer.Gaming/bin/Release/net10.0`, copiados por un proyecto independiente sin referencias de proyecto. No se repitieron WUA, los lanzamientos Windows o la suite completa.
+Seguimiento contra los DLL actualizados de `src/Silen.Core/bin/Release/net10.0` y `src/Silen.Gaming/bin/Release/net10.0`, copiados por un proyecto independiente sin referencias de proyecto. No se repitieron WUA, los lanzamientos Windows o la suite completa.
 
 - **Cancelación CSV corregida en Gaming:** el mismo CSV de 62.050.039 bytes / 850.000 frames interrumpió el parser **1,08 ms después de solicitar cancelación** (71,67 ms desde el inicio). El caso precancelado con ruta inexistente también terminó con `OperationCanceledException`, sin intentar abrir la ruta. El seguimiento de la integración del token en la interfaz corresponde al integrador.
 - **La pérdida silenciosa entre escritores queda corregida:** el escenario original con dos `ReportStore` y 40 operaciones conserva **40/40** entradas. Dos procesos reales, con 100 entradas cada uno y sin un lector concurrente, conservan **200/200** identificadores distintos, sin errores.

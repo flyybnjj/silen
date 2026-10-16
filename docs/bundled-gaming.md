@@ -1,10 +1,10 @@
 # Colector gaming incluido
 
-FlyyOptimizer distribuye la consola standalone oficial x64 de PresentMon 2.6.0. No usa el servicio, la aplicación gráfica, un instalador MSI ni `presentmon-cli`. No descarga componentes al entrar a Gaming o al iniciar una captura. Los binarios oficiales se mantienen en el repositorio para que la publicación sea reproducible sin consultar GitHub.
+Silen distribuye la consola standalone oficial x64 de PresentMon 2.6.0. No usa el servicio, la aplicación gráfica, un instalador MSI ni `presentmon-cli`. No descarga componentes al entrar a Gaming o al iniciar una captura. Los binarios oficiales se mantienen en el repositorio para que la publicación sea reproducible sin consultar GitHub.
 
 ## Integración
 
-`FlyyOptimizer.Gaming.BundledPresentMon.Resolve(string? baseDirectory = null)` devuelve la ruta absoluta a `tools/PresentMon/PresentMon.exe`. El valor predeterminado usa `AppContext.BaseDirectory`, sin depender del directorio actual. Antes de devolverla lee el archivo y compara su SHA256 fijado. Ausencia, manipulación y errores de acceso producen `InvalidOperationException` con una acción concreta para el usuario; un error de lectura conserva su excepción interna. No hay fallback a un ejecutable del PATH o de otra instalación.
+`Silen.Gaming.BundledPresentMon.Resolve(string? baseDirectory = null)` devuelve la ruta absoluta a `tools/PresentMon/PresentMon.exe`. El valor predeterminado usa `AppContext.BaseDirectory`, sin depender del directorio actual. Antes de devolverla lee el archivo y compara su SHA256 fijado. Ausencia, manipulación y errores de acceso producen `InvalidOperationException` con una acción concreta para el usuario; un error de lectura conserva su excepción interna. No hay fallback a un ejecutable del PATH o de otra instalación.
 
 La aplicación WPF copia ejecutable, procedencia y licencias a salida y publicación mediante `CopyToOutputDirectory` y `CopyToPublishDirectory`. `scripts/build.ps1` rechaza un asset ausente o cuyo SHA256 no coincide; no incorpora descargas. La API de captura conserva su parámetro de ejecutable interno para probar de forma aislada el ciclo de vida del proceso. La interfaz resuelve automáticamente el colector incluido.
 
@@ -22,7 +22,7 @@ La aplicación WPF copia ejecutable, procedencia y licencias a salida y publicac
 
 La inspección PE confirma AMD64 (`0x8664`) y ausencia de cabecera CLR. Importa `KERNEL32.dll`; carga diferida de `ADVAPI32.dll`, `SHELL32.dll`, `USER32.dll` y `tdh.dll`. Son componentes de Windows. No requiere archivos nativos adicionales, SDK .NET ni VC++ Redistributable para esta consola; el [proyecto oficial](https://github.com/GameTechDev/PresentMon/blob/v2.6.0/PresentMon/PresentMon.vcxproj) también configura el runtime C++ estático en Release.
 
-La [documentación de consola fijada](https://github.com/GameTechDev/PresentMon/blob/v2.6.0/README-ConsoleApplication.md) y la ayuda del binario incluyen todas las opciones usadas por FlyyOptimizer: `--process_id`, `--timed`, `--terminate_after_timed`, `--no_console_stats`, `--v1_metrics`, `--session_name`, `--output_file` y `--terminate_existing_session`. Se conserva el formato CSV v1 compatible con el parser existente. La limpieza de cancelación usa solo la sesión ETW propia, con nombre aleatorio.
+La [documentación de consola fijada](https://github.com/GameTechDev/PresentMon/blob/v2.6.0/README-ConsoleApplication.md) y la ayuda del binario incluyen todas las opciones usadas por Silen: `--process_id`, `--timed`, `--terminate_after_timed`, `--no_console_stats`, `--v1_metrics`, `--session_name`, `--output_file` y `--terminate_existing_session`. Se conserva el formato CSV v1 compatible con el parser existente. La limpieza de cancelación usa solo la sesión ETW propia, con nombre aleatorio.
 
 La captura ETW continúa sujeta a permisos de Windows. No se instala un servicio ni se cambia la pertenencia a grupos automáticamente. La disponibilidad del colector incluido y la medición efectiva de un juego son verificaciones distintas.
 

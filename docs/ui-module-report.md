@@ -1,4 +1,4 @@
-# FlyyOptimizer: módulo de interfaz
+# Silen: módulo de interfaz
 
 ## Diseño
 
@@ -27,9 +27,9 @@ Los informes se exportan como JSON con las opciones de Core o Markdown. Junto a 
 ## CLI
 
 ```text
-FlyyOptimizer.exe --scan <informe.json>
-FlyyOptimizer.exe --render <vista.png>
-FlyyOptimizer.exe --smoke-test <directorio>
+Silen.exe --scan <informe.json>
+Silen.exe --render <vista.png>
+Silen.exe --smoke-test <directorio>
 ```
 
 `--scan` realiza un escaneo real y guarda JSON. `--render` obtiene una observación real y renderiza la vista Resumen al completar el layout. `--smoke-test` guarda JSON y Markdown, usa historial aislado bajo su directorio de salida, recorre las seis vistas y renderiza cada una a los tamaños inicial y mínimo. No ejecuta captura de gaming ni abre ajustes durante esa verificación.

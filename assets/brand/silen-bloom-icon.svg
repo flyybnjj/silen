@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-labelledby="title desc">
+  <title id="title">Silen · BLOOM</title>
+  <desc id="desc">Optical icon: the folded BLOOM silhouette, simplified for native window and taskbar sizes.</desc>
+  <g transform="rotate(8 50 50)">
+    <path fill="#B23B35" d="M28 30 C11 18 4 22 9 43 C13 59 25 76 38 81 C47 91 63 90 73 87 C82 87 89 82 93 74 C101 60 97 44 81 45 C76 28 65 12 49 8 C36 3 29 11 28 30Z"/>
+    <path fill="#D94D43" d="M28 30 C29 11 36 3 49 8 C65 12 76 28 81 45 C64 43 48 42 28 30Z"/>
+    <path fill="#B23B35" d="M81 45 C97 44 101 60 93 74 C85 89 70 92 58 85 C51 81 44 78 38 81 C55 67 65 50 81 45Z"/>
+    <path fill="#F47765" d="M28 30 C43 38 61 46 81 45 C63 49 47 72 38 81 C29 72 25 49 28 30Z"/>
+  </g>
+</svg>

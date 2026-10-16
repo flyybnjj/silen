@@ -1,6 +1,6 @@
 # Corrección de permisos de Edge — incluida en 1.1.0
 
-El reporte mostraba «Reducir procesos de Edge al cerrarlo» y «Windows denegó el acceso». Flyy seleccionaba el ajuste automáticamente aunque no pudiera escribir en `HKCU\Software\Policies\Microsoft\Edge`. El resto del perfil podía completarse, pero el resultado global se mostraba como incompleto.
+El reporte mostraba «Reducir procesos de Edge al cerrarlo» y «Windows denegó el acceso». Silen seleccionaba el ajuste automáticamente aunque no pudiera escribir en `HKCU\Software\Policies\Microsoft\Edge`. El resto del perfil podía completarse, pero el resultado global se mostraba como incompleto.
 
 La vista previa comprueba ahora el acceso de escritura a las claves que necesitan cambios. Cuando una clave no existe, comprueba su antecesor existente más cercano sin crear claves ni valores. Una denegación detiene la comprobación: no se intenta usar un antecesor más permisivo para eludirla. Un ajuste que ya tiene todos sus valores de destino no necesita escritura.
 

@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <StartupObject>Silen.App.Program</StartupObject>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>Silen</AssemblyName>
+    <Product>Silen</Product>
+    <Title>Silen</Title>
+    <Version>1.1.0</Version>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets/Silen.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Resource Include="Assets/Silen.ico" />
+    <Resource Include="Assets/Fonts/SourceSerif4-*.ttf" />
+    <Resource Include="Assets/Brand/silen-bloom.png" />
+    <ProjectReference Include="../Silen.Core/Silen.Core.csproj" />
+    <ProjectReference Include="../Silen.Windows/Silen.Windows.csproj" />
+    <ProjectReference Include="../Silen.Gaming/Silen.Gaming.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="../../README.md" Link="Archivos/README.md" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true" Condition="Exists('../../README.md')" />
+    <Content Include="../../THIRD-PARTY-NOTICES.md" Link="Archivos/THIRD-PARTY-NOTICES.md" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true" Condition="Exists('../../THIRD-PARTY-NOTICES.md')" />
+    <Content Include="../../licenses/**/*" Link="Archivos/licenses/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    <Content Include="../../assets/WinUtil/*" Link="Archivos/tools/WinUtil/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+  </ItemGroup>
+</Project>

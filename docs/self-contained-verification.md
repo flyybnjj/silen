@@ -1,4 +1,4 @@
-# Verificación de FlyyOptimizer autocontenido — 14 de octubre de 2026
+# Verificación de Silen autocontenido — 14 de octubre de 2026
 
 > Registro histórico de una compilación anterior. PresentMon y la captura se retiraron después. Para 1.1.0 consulta [actualizaciones integradas](github-updates.md) y el README actual.
 
@@ -41,14 +41,14 @@ El ZIP final tiene **443 entradas**, **68.057.823 bytes** y SHA256 `ED8E1472F0BB
 
 | Archivo | SHA256 |
 | --- | --- |
-| FlyyOptimizer.exe | `5D88BF9F6CE72362101CC96E8C7FC0768E5613FCDCC70ABD2C1434155C27FADD` |
-| FlyyOptimizer.dll | `767187294BA813F2B770F3C8CA912CF8CE539FB99F5DA88BD6BD6E3A08767D64` |
+| Silen.exe | `5D88BF9F6CE72362101CC96E8C7FC0768E5613FCDCC70ABD2C1434155C27FADD` |
+| Silen.dll | `767187294BA813F2B770F3C8CA912CF8CE539FB99F5DA88BD6BD6E3A08767D64` |
 | tools/PresentMon/PresentMon.exe | `B2A706BC6AD475749E3B7E3409263AA1E6906D45BDCF993F6DBC0F660188F1AF` |
 
 ## Permisos de captura y límites comprobados
 
 La consola incluida ejecutó su ayuda nativa sin SDK ni runtimes C++ adicionales. Un intento real de captura sobre nuestro propio proceso WPF terminó con código 6 y `failed to start trace session: access denied`: Windows requiere administrador o pertenencia al grupo Performance Log Users en este equipo. No se creó una sesión ETW ni se capturó un juego real. Evidencia: `artifacts/self-contained-probe/published-check/capture.json`.
 
-Gaming reconoce ese error y ofrece **Abrir Flyy como administrador** si el proceso actual no está elevado. El clic abre el apphost de Flyy de su propia carpeta con `runas`; conserva la ventana actual y no inicia permisos automáticamente ni instala otro programa. La captura exitosa de un juego con elevación sigue pendiente de validación real.
+Gaming reconoce ese error y ofrece **Abrir Silen como administrador** si el proceso actual no está elevado. El clic abre el apphost de Silen de su propia carpeta con `runas`; conserva la ventana actual y no inicia permisos automáticamente ni instala otro programa. La captura exitosa de un juego con elevación sigue pendiente de validación real.
 
 Las temperaturas dependen de los sensores disponibles; en este equipo no se obtuvo temperatura CPU. Inicio gestiona únicamente las entradas HKCU Run del usuario; los paquetes OEM integrados específicos corresponden a Lenovo y no equivalen a actualizaciones confirmadas para cada componente. La limpieza seleccionada elimina archivos y no tiene deshacer. Los ajustes guardan originales y permiten restauración cuando no hay cambios externos incompatibles.

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Implement independent file-service and WPF tasks with test-driven-development; use verification-before-completion and independent review before publication.
 
-**Goal:** Optimizar PC y ajustes de Fortnite desde Flyy con detección, cambios verificables y restauración, sin utilidades externas.
+**Goal:** Optimizar PC y ajustes de Fortnite desde Silen con detección, cambios verificables y restauración, sin utilidades externas.
 
 **Architecture:** FortniteGameService detecta/edita/restaura archivos. FortniteProfileService combina el fragmento WinUtil y NativeOptimizationService con pasos seleccionados. FortniteViewModel comparte OperationLifetime; navegación interna enlaza los controles existentes.
 

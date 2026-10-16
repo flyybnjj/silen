@@ -1,29 +1,53 @@
+param([string]$PreviewPath)
+
 $ErrorActionPreference = 'Stop'
-Add-Type -AssemblyName System.Drawing
-$taskBrandDirectory = Join-Path (Split-Path -Parent $PSScriptRoot) 'src\FlyyOptimizer.App\Assets'
+Add-Type -AssemblyName PresentationCore, PresentationFramework, WindowsBase
+$taskRoot = Split-Path -Parent $PSScriptRoot
+$taskBrandDirectory = Join-Path $taskRoot 'src\Silen.App\Assets'
 [System.IO.Directory]::CreateDirectory($taskBrandDirectory) | Out-Null
+# Render the SVG's filled Bezier paths directly at each native size. Shrinking
+# the translucent photographic mascot loses its folds at title-bar resolution.
+[xml]$taskSvg = Get-Content -LiteralPath (Join-Path $taskRoot 'assets\brand\silen-bloom-icon.svg') -Raw
+$taskArtwork = [System.Windows.Media.DrawingGroup]::new()
+$taskTransform = [string]$taskSvg.svg.g.transform
+if ($taskTransform -notmatch '^rotate\(([-\d.]+) ([-\d.]+) ([-\d.]+)\)$') { throw 'Unsupported icon transform.' }
+$taskCulture = [System.Globalization.CultureInfo]::InvariantCulture
+$taskArtwork.Transform = [System.Windows.Media.RotateTransform]::new(
+    [double]::Parse($Matches[1], $taskCulture), [double]::Parse($Matches[2], $taskCulture), [double]::Parse($Matches[3], $taskCulture))
+foreach ($taskPath in $taskSvg.svg.g.path) {
+    $taskGeometry = [System.Windows.Media.Geometry]::Parse([string]$taskPath.d)
+    $taskBrush = [System.Windows.Media.BrushConverter]::new().ConvertFromString([string]$taskPath.fill)
+    $taskArtwork.Children.Add([System.Windows.Media.GeometryDrawing]::new($taskBrush, $null, $taskGeometry))
+}
+$taskArtwork.Freeze()
+$taskBounds = $taskArtwork.Bounds
 $taskImages = @()
-foreach ($taskSize in @(16,24,32,48,64,128,256)) {
-    $taskBitmap = [System.Drawing.Bitmap]::new($taskSize,$taskSize)
-    $taskGraphics = [System.Drawing.Graphics]::FromImage($taskBitmap)
-    $taskShape = [System.Drawing.Drawing2D.GraphicsPath]::new()
-    $taskBlue = [System.Drawing.SolidBrush]::new([System.Drawing.ColorTranslator]::FromHtml('#0062CC'))
-    $taskWhite = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::White)
+foreach ($taskSize in @(16,20,24,28,32,40,48,56,64,96,128,256)) {
+    $taskVisual = [System.Windows.Media.DrawingVisual]::new()
+    $taskDrawing = $taskVisual.RenderOpen()
+    try {
+        $taskInset = if ($taskSize -le 32) { .35 } else { $taskSize * .015 }
+        $taskScale = ($taskSize - 2 * $taskInset) / [Math]::Max($taskBounds.Width, $taskBounds.Height)
+        $taskOffsetX = ($taskSize - $taskBounds.Width * $taskScale) / 2 - $taskBounds.X * $taskScale
+        $taskOffsetY = ($taskSize - $taskBounds.Height * $taskScale) / 2 - $taskBounds.Y * $taskScale
+        $taskMatrix = [System.Windows.Media.Matrix]::new($taskScale, 0, 0, $taskScale, $taskOffsetX, $taskOffsetY)
+        $taskDrawing.PushTransform([System.Windows.Media.MatrixTransform]::new($taskMatrix))
+        $taskDrawing.DrawDrawing($taskArtwork)
+        $taskDrawing.Pop()
+    } finally { $taskDrawing.Close() }
+    $taskBitmap = [System.Windows.Media.Imaging.RenderTargetBitmap]::new($taskSize, $taskSize, 96, 96, [System.Windows.Media.PixelFormats]::Pbgra32)
+    $taskBitmap.Render($taskVisual)
+    $taskEncoder = [System.Windows.Media.Imaging.PngBitmapEncoder]::new()
+    $taskEncoder.Frames.Add([System.Windows.Media.Imaging.BitmapFrame]::Create($taskBitmap))
     $taskMemory = [System.IO.MemoryStream]::new()
     try {
-        $taskGraphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
-        $taskGraphics.ScaleTransform($taskSize/64.0,$taskSize/64.0)
-        $taskShape.AddArc(0,0,32,32,180,90); $taskShape.AddArc(32,0,32,32,270,90)
-        $taskShape.AddArc(32,32,32,32,0,90); $taskShape.AddArc(0,32,32,32,90,90)
-        $taskShape.CloseFigure()
-        $taskGraphics.FillPath($taskBlue,$taskShape)
-        [System.Drawing.PointF[]]$taskPoints = @([System.Drawing.PointF]::new(16,16),[System.Drawing.PointF]::new(51,16),[System.Drawing.PointF]::new(42,25),[System.Drawing.PointF]::new(26,25),[System.Drawing.PointF]::new(26,30),[System.Drawing.PointF]::new(40,30),[System.Drawing.PointF]::new(31,39),[System.Drawing.PointF]::new(26,39),[System.Drawing.PointF]::new(26,48),[System.Drawing.PointF]::new(16,48))
-        $taskGraphics.FillPolygon($taskWhite,$taskPoints)
-        $taskBitmap.Save($taskMemory,[System.Drawing.Imaging.ImageFormat]::Png)
-        $taskImages += [pscustomobject]@{Size=$taskSize;Bytes=$taskMemory.ToArray()}
-    } finally { $taskGraphics.Dispose(); $taskBitmap.Dispose(); $taskShape.Dispose(); $taskBlue.Dispose(); $taskWhite.Dispose(); $taskMemory.Dispose() }
+        $taskEncoder.Save($taskMemory)
+        $taskBytes = $taskMemory.ToArray()
+        $taskImages += [pscustomobject]@{Size=$taskSize;Bytes=$taskBytes}
+        if ($PreviewPath -and $taskSize -eq 256) { [System.IO.File]::WriteAllBytes($PreviewPath, $taskBytes) }
+    } finally { $taskMemory.Dispose() }
 }
-$taskIconFile = [System.IO.File]::Create((Join-Path $taskBrandDirectory 'Flyy.ico'))
+$taskIconFile = [System.IO.File]::Create((Join-Path $taskBrandDirectory 'Silen.ico'))
 $taskWriter = [System.IO.BinaryWriter]::new($taskIconFile)
 try {
     $taskWriter.Write([uint16]0); $taskWriter.Write([uint16]1); $taskWriter.Write([uint16]$taskImages.Count)
@@ -37,4 +61,4 @@ try {
     }
     foreach ($taskImage in $taskImages) { $taskWriter.Write([byte[]]$taskImage.Bytes) }
 } finally { $taskWriter.Dispose(); $taskIconFile.Dispose() }
-Write-Output 'Flyy.ico generado: 16, 24, 32, 48, 64, 128 y 256 px.'
+Write-Output 'Silen.ico vectorial y transparente: 16, 20, 24, 28, 32, 40, 48, 56, 64, 96, 128 y 256 px.'

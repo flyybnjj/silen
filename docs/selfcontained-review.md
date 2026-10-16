@@ -49,9 +49,9 @@ No se aplicaron cambios reales de registro, energía ni animaciones, ni se limpi
 
 ## Revisión dirigida de elevación para ETW
 
-Después de que la verificación coordinada encontró un rechazo de permisos al iniciar ETW, se revisó el botón opcional para abrir una nueva ventana de FlyyOptimizer como administrador. No hay hallazgos concretos abiertos en esta incorporación.
+Después de que la verificación coordinada encontró un rechazo de permisos al iniciar ETW, se revisó el botón opcional para abrir una nueva ventana de Silen como administrador. No hay hallazgos concretos abiertos en esta incorporación.
 
-`Elevation.CreateStartInfo` selecciona únicamente `AppContext.BaseDirectory/FlyyOptimizer.exe`, con el mismo directorio de trabajo, `UseShellExecute=true`, `Verb=runas` y ningún argumento. No busca ejecutables en PATH, no eleva PresentMon directamente y no reutiliza argumentos de smoke. La ruta ausente muestra una indicación de recuperar el paquete completo.
+`Elevation.CreateStartInfo` selecciona únicamente `AppContext.BaseDirectory/Silen.exe`, con el mismo directorio de trabajo, `UseShellExecute=true`, `Verb=runas` y ningún argumento. No busca ejecutables en PATH, no eleva PresentMon directamente y no reutiliza argumentos de smoke. La ruta ausente muestra una indicación de recuperar el paquete completo.
 
 El botón solo aparece después de un error de permisos de captura y cuando el token del proceso no está elevado. La inicialización y el rechazo de ETW no solicitan UAC automáticamente. El comando exige un clic explícito y comparte `RunBusyAsync`/`OperationLifetime`: mientras la solicitud está pendiente se bloquean nuevos análisis/herramientas, y cerrar espera a que termine. La ventana original y su sesión se conservan. El código 1223 de Windows informa que la solicitud se canceló y permite reintentar desde el botón.
 

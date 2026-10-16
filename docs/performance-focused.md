@@ -2,7 +2,7 @@
 
 Se retiró el flujo de capturar partidas, importar CSV, comparar sesiones y explicar métricas. PresentMon ya no se distribuye. La biblioteca y sus pruebas históricas permanecen en código, sin controles de captura en la app. Las lecturas del análisis de hardware siguen disponibles para diagnosticar el equipo.
 
-Gaming ofrece Optimizar PC y una selección de controles reales, disponibles según el equipo. La confirmación usa una ventana WPF propia con propietario y botones Ahora no / Sí, optimizar. El icono Flyy se integra en el ejecutable y la ventana, con siete tamaños de 16 a 256 px; la marca vectorial de la interfaz comparte el mismo dibujo. En Drivers, antes del análisis se muestra una acción para identificar el equipo en lugar de inventarios vacíos y controles inactivos.
+Gaming ofrece Optimizar PC y una selección de controles reales, disponibles según el equipo. La confirmación usa una ventana WPF propia con propietario y botones Ahora no / Sí, optimizar. El icono Silen se integra en el ejecutable y la ventana, con siete tamaños de 16 a 256 px; la marca vectorial de la interfaz comparte el mismo dibujo. En Drivers, antes del análisis se muestra una acción para identificar el equipo en lugar de inventarios vacíos y controles inactivos.
 
 ## Controles y límites
 
@@ -17,13 +17,13 @@ Publicidad, personalización diagnóstica, contenido promocional y búsqueda Bin
 
 El journal guarda originales antes de mutar, comprueba cada escritura y preserva cambios externos al deshacer. Un resultado parcial conserva respaldo y no dice PC listo. La selección manual pide la misma confirmación que el botón automático.
 
-## Actualizaciones dentro de Flyy
+## Actualizaciones dentro de Silen
 
 Drivers empieza con Buscar actualizaciones. Cuando la consulta verificada a Windows Update no ofrece drivers, muestra «No hay actualizaciones de drivers disponibles en Windows Update» y oculta descarga/lista. Si hay ofertas, muestra Descargar y un desplegable con las disponibles y su estado. Una búsqueda incompleta muestra un error; no se presenta como ausencia de actualizaciones. Se retiraron los botones redundantes de apertura de Windows Update de esta pantalla.
 
 La descarga usa [BeginDownload/EndDownload de Windows Update Agent](https://learn.microsoft.com/en-us/windows/win32/api/wuapi/nf-wuapi-iupdatedownloader-begindownload), con una búsqueda nueva de drivers no instalados/ocultos y coincidencia exacta de ID/revisión. Los archivos quedan en la caché de Windows Update, sin instalación. No acepta licencias automáticamente; los paquetes que requieren licencia muestran ese requisito. Solo se marcan descargados los IDs confirmados; cancelación y fallos permiten reintentar.
 
-Según los [permisos de WUA](https://learn.microsoft.com/en-us/windows/win32/wua_sdk/secured-methods-and-properties-in-the-wua-api), descargar puede requerir administrador. Desde una sesión normal, Descargar abre únicamente Flyy con UAC y el argumento fijo `--drivers`; mantiene la ventana original y permite reintentar si se cancela el permiso. La nueva ventana abre Drivers para buscar y descargar explícitamente. No instala una herramienta externa ni lanza un instalador de drivers.
+Según los [permisos de WUA](https://learn.microsoft.com/en-us/windows/win32/wua_sdk/secured-methods-and-properties-in-the-wua-api), descargar puede requerir administrador. Desde una sesión normal, Descargar abre únicamente Silen con UAC y el argumento fijo `--drivers`; mantiene la ventana original y permite reintentar si se cancela el permiso. La nueva ventana abre Drivers para buscar y descargar explícitamente. No instala una herramienta externa ni lanza un instalador de drivers.
 
 El límite de 20 minutos y la cancelación acotan la espera de la interfaz incluso si [CleanUp de WUA sigue esperando](https://learn.microsoft.com/en-us/windows/win32/api/wuapi/nf-wuapi-idownloadjob-cleanup). El trabajador conserva sus recursos hasta terminar y mantiene una exclusión de descarga durante la limpieza para evitar un reintento simultáneo en esa instancia.
 
@@ -35,4 +35,4 @@ Suite: 318 pruebas correctas, ninguna fallida y una omitida de red. Compilación
 
 Revisión independiente de código: se corrigió el detalle ausente de errores de optimización, la espera de limpieza de WUA y la recuperación de permisos. La revisión final no dejó hallazgos críticos/importantes. Se inspeccionaron dos lotes visuales con tamaño normal y mínimo, estados de actualización, confirmación y el icono extraído del ejecutable. Se corrigió el singular del mensaje de una actualización y se priorizaron calidad/GPU/energía en la lista de Gaming; la selección mantiene el orden de aplicación del servicio.
 
-ZIP final: 445 entradas, 67 704 267 bytes. Los ensamblados/executable, el recurso WinUtil y su licencia coinciden con el directorio publicado probado; PresentMon.exe no está incluido. SHA-256 de `artifacts/FlyyOptimizer-win-x64.zip`: `5EF3771CF68692CF40F683336084006E89619C7AA326695BDCDBD2E85220E042`.
+ZIP final: 445 entradas, 67 704 267 bytes. Los ensamblados/executable, el recurso WinUtil y su licencia coinciden con el directorio publicado probado; PresentMon.exe no está incluido. SHA-256 de `artifacts/Silen-win-x64.zip`: `5EF3771CF68692CF40F683336084006E89619C7AA326695BDCDBD2E85220E042`.

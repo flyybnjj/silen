@@ -1,0 +1,162 @@
+# Cambio de nombre a Silen
+
+El alcance de la fase 1 se comunicó en el chat antes de modificar archivos. Se cambian nombres y referencias; el diseño, la geometría del logotipo y los bytes del icono se conservan hasta elegir identidad.
+
+## Compatibilidad
+
+- Instalaciones nuevas: `%LocalAppData%\Silen`.
+- Si existe `%LocalAppData%\FlyyOptimizer`, se reutiliza esa raíz, incluso si también existe la nueva. No hay copia ni movimiento de datos.
+- Se conservan la dirección real `flyybnjj/flyyoptimizer` y el bloqueo compartido `.flyy-update.lock`.
+- El salto desde el portable antiguo requiere extraer Silen en otra carpeta y actualizar los accesos directos. El actualizador antiguo no admite los nuevos nombres.
+- La ubicación física del checkout, los binarios y las evidencias históricas ignoradas no se renombran ni eliminan. Los nuevos entregables se generan por separado en `artifacts/Silen-win-x64/` y `artifacts/Silen-win-x64.zip`.
+- Las rutas en documentación previa se normalizan al nombre nuevo; los resultados históricos no constituyen una nueva ejecución de sus pruebas.
+- No se encontraron instaladores MSI/MSIX/Inno ni claves propias de registro. Se conservan los destinos de registro de Windows.
+
+## Inventario de archivos con referencias modificadas
+- `FlyyOptimizer.sln` → `Silen.sln`
+- `README.md` → `README.md`
+- `THIRD-PARTY-NOTICES.md` → `THIRD-PARTY-NOTICES.md`
+- `docs/bundled-gaming.md` → `docs/bundled-gaming.md`
+- `docs/code-review.md` → `docs/code-review.md`
+- `docs/edge-permissions-fix.md` → `docs/edge-permissions-fix.md`
+- `docs/fortnite-game.md` → `docs/fortnite-game.md`
+- `docs/fortnite-verification.md` → `docs/fortnite-verification.md`
+- `docs/gaming-module-report.md` → `docs/gaming-module-report.md`
+- `docs/github-updates.md` → `docs/github-updates.md`
+- `docs/native-tools.md` → `docs/native-tools.md`
+- `docs/oem-windows-v2.md` → `docs/oem-windows-v2.md`
+- `docs/performance-focused.md` → `docs/performance-focused.md`
+- `docs/progress.md` → `docs/progress.md`
+- `docs/research/2026-10-13-referencias.md` → `docs/research/2026-10-13-referencias.md`
+- `docs/research/2026-10-14-fortnite-profile.md` → `docs/research/2026-10-14-fortnite-profile.md`
+- `docs/research/2026-10-14-utilidades-mejoras-gaming.md` → `docs/research/2026-10-14-utilidades-mejoras-gaming.md`
+- `docs/review-v2.md` → `docs/review-v2.md`
+- `docs/self-contained-verification.md` → `docs/self-contained-verification.md`
+- `docs/selfcontained-review.md` → `docs/selfcontained-review.md`
+- `docs/selfcontained-ui.md` → `docs/selfcontained-ui.md`
+- `docs/simple-optimization.md` → `docs/simple-optimization.md`
+- `docs/superpowers/plans/2026-10-13-flyyoptimizer.md` → `docs/superpowers/plans/2026-10-13-silen.md`
+- `docs/superpowers/plans/2026-10-14-fortnite-profile.md` → `docs/superpowers/plans/2026-10-14-fortnite-profile.md`
+- `docs/superpowers/plans/2026-10-14-github-updates.md` → `docs/superpowers/plans/2026-10-14-github-updates.md`
+- `docs/superpowers/plans/2026-10-14-self-contained-tools.md` → `docs/superpowers/plans/2026-10-14-self-contained-tools.md`
+- `docs/superpowers/specs/2026-10-13-flyyoptimizer-design.md` → `docs/superpowers/specs/2026-10-13-silen-design.md`
+- `docs/superpowers/specs/2026-10-14-fortnite-profile.md` → `docs/superpowers/specs/2026-10-14-fortnite-profile.md`
+- `docs/superpowers/specs/2026-10-14-github-updates.md` → `docs/superpowers/specs/2026-10-14-github-updates.md`
+- `docs/superpowers/specs/2026-10-14-self-contained-tools.md` → `docs/superpowers/specs/2026-10-14-self-contained-tools.md`
+- `docs/tools-audit-v2.md` → `docs/tools-audit-v2.md`
+- `docs/ui-module-report.md` → `docs/ui-module-report.md`
+- `docs/user-guide.md` → `docs/user-guide.md`
+- `docs/verification.md` → `docs/verification.md`
+- `docs/windows-module-report.md` → `docs/windows-module-report.md`
+- `scripts/build.ps1` → `scripts/build.ps1`
+- `scripts/create-brand-icon.ps1` → `scripts/create-brand-icon.ps1`
+- `scripts/run.ps1` → `scripts/run.ps1`
+- `scripts/verify-portable.ps1` → `scripts/verify-portable.ps1`
+- `src/FlyyOptimizer.App/App.xaml` → `src/Silen.App/App.xaml`
+- `src/FlyyOptimizer.App/App.xaml.cs` → `src/Silen.App/App.xaml.cs`
+- `src/FlyyOptimizer.App/AppUpdateViewModel.cs` → `src/Silen.App/AppUpdateViewModel.cs`
+- `src/FlyyOptimizer.App/CaptureInputValidation.cs` → `src/Silen.App/CaptureInputValidation.cs`
+- `src/FlyyOptimizer.App/Commands.cs` → `src/Silen.App/Commands.cs`
+- `src/FlyyOptimizer.App/DisplayModels.cs` → `src/Silen.App/DisplayModels.cs`
+- `src/FlyyOptimizer.App/Elevation.cs` → `src/Silen.App/Elevation.cs`
+- `src/FlyyOptimizer.App/FlyyOptimizer.App.csproj` → `src/Silen.App/Silen.App.csproj`
+- `src/FlyyOptimizer.App/FortniteViewModel.cs` → `src/Silen.App/FortniteViewModel.cs`
+- `src/FlyyOptimizer.App/InteractionSmokeChecks.cs` → `src/Silen.App/InteractionSmokeChecks.cs`
+- `src/FlyyOptimizer.App/MainViewModel.cs` → `src/Silen.App/MainViewModel.cs`
+- `src/FlyyOptimizer.App/MainWindow.xaml` → `src/Silen.App/MainWindow.xaml`
+- `src/FlyyOptimizer.App/MainWindow.xaml.cs` → `src/Silen.App/MainWindow.xaml.cs`
+- `src/FlyyOptimizer.App/Motion.cs` → `src/Silen.App/Motion.cs`
+- `src/FlyyOptimizer.App/OperationLifetime.cs` → `src/Silen.App/OperationLifetime.cs`
+- `src/FlyyOptimizer.App/OptimizationConfirmation.xaml` → `src/Silen.App/OptimizationConfirmation.xaml`
+- `src/FlyyOptimizer.App/OptimizationConfirmation.xaml.cs` → `src/Silen.App/OptimizationConfirmation.xaml.cs`
+- `src/FlyyOptimizer.App/ResourceTrace.cs` → `src/Silen.App/ResourceTrace.cs`
+- `src/FlyyOptimizer.App/Theme.xaml` → `src/Silen.App/Theme.xaml`
+- `src/FlyyOptimizer.App/ToolsViewModel.cs` → `src/Silen.App/ToolsViewModel.cs`
+- `src/FlyyOptimizer.App/ViewModelServices.cs` → `src/Silen.App/ViewModelServices.cs`
+- `src/FlyyOptimizer.App/app.manifest` → `src/Silen.App/app.manifest`
+- `src/FlyyOptimizer.Core/Models.cs` → `src/Silen.Core/Models.cs`
+- `src/FlyyOptimizer.Core/RecommendationEngine.cs` → `src/Silen.Core/RecommendationEngine.cs`
+- `src/FlyyOptimizer.Core/ReportFormatter.cs` → `src/Silen.Core/ReportFormatter.cs`
+- `src/FlyyOptimizer.Core/ReportStore.cs` → `src/Silen.Core/ReportStore.cs`
+- `src/FlyyOptimizer.Core/SnapshotComparison.cs` → `src/Silen.Core/SnapshotComparison.cs`
+- `src/FlyyOptimizer.Gaming/BundledPresentMon.cs` → `src/Silen.Gaming/BundledPresentMon.cs`
+- `src/FlyyOptimizer.Gaming/FlyyOptimizer.Gaming.csproj` → `src/Silen.Gaming/Silen.Gaming.csproj`
+- `src/FlyyOptimizer.Gaming/GamingCapture.cs` → `src/Silen.Gaming/GamingCapture.cs`
+- `src/FlyyOptimizer.Gaming/PresentMonCsv.cs` → `src/Silen.Gaming/PresentMonCsv.cs`
+- `src/FlyyOptimizer.Windows/AcquisitionNormalization.cs` → `src/Silen.Windows/AcquisitionNormalization.cs`
+- `src/FlyyOptimizer.Windows/AppUpdateArchive.cs` → `src/Silen.Windows/AppUpdateArchive.cs`
+- `src/FlyyOptimizer.Windows/AppUpdateCache.cs` → `src/Silen.Windows/AppUpdateCache.cs`
+- `src/FlyyOptimizer.Windows/AppUpdateInstaller.cs` → `src/Silen.Windows/AppUpdateInstaller.cs`
+- `src/FlyyOptimizer.Windows/AppUpdateJobProtection.cs` → `src/Silen.Windows/AppUpdateJobProtection.cs`
+- `src/FlyyOptimizer.Windows/AppUpdateModels.cs` → `src/Silen.Windows/AppUpdateModels.cs`
+- `src/FlyyOptimizer.Windows/AppUpdatePaths.cs` → `src/Silen.Windows/AppUpdatePaths.cs`
+- `src/FlyyOptimizer.Windows/AppUpdateService.cs` → `src/Silen.Windows/AppUpdateService.cs`
+- `src/FlyyOptimizer.Windows/AppUpdateTrust.cs` → `src/Silen.Windows/AppUpdateTrust.cs`
+- `src/FlyyOptimizer.Windows/DeviceClassifier.cs` → `src/Silen.Windows/DeviceClassifier.cs`
+- `src/FlyyOptimizer.Windows/DriverDownloadService.cs` → `src/Silen.Windows/DriverDownloadService.cs`
+- `src/FlyyOptimizer.Windows/DriverUpdateService.cs` → `src/Silen.Windows/DriverUpdateService.cs`
+- `src/FlyyOptimizer.Windows/FlyyOptimizer.Windows.csproj` → `src/Silen.Windows/Silen.Windows.csproj`
+- `src/FlyyOptimizer.Windows/FortniteGameContracts.cs` → `src/Silen.Windows/FortniteGameContracts.cs`
+- `src/FlyyOptimizer.Windows/FortniteGameJournal.cs` → `src/Silen.Windows/FortniteGameJournal.cs`
+- `src/FlyyOptimizer.Windows/FortniteGameService.cs` → `src/Silen.Windows/FortniteGameService.cs`
+- `src/FlyyOptimizer.Windows/FortniteGpuPreference.cs` → `src/Silen.Windows/FortniteGpuPreference.cs`
+- `src/FlyyOptimizer.Windows/FortniteProfileContracts.cs` → `src/Silen.Windows/FortniteProfileContracts.cs`
+- `src/FlyyOptimizer.Windows/FortniteProfileService.cs` → `src/Silen.Windows/FortniteProfileService.cs`
+- `src/FlyyOptimizer.Windows/FortniteSafeFiles.cs` → `src/Silen.Windows/FortniteSafeFiles.cs`
+- `src/FlyyOptimizer.Windows/FortniteSettingsEditor.cs` → `src/Silen.Windows/FortniteSettingsEditor.cs`
+- `src/FlyyOptimizer.Windows/HardwareSensors.cs` → `src/Silen.Windows/HardwareSensors.cs`
+- `src/FlyyOptimizer.Windows/NativeMetrics.cs` → `src/Silen.Windows/NativeMetrics.cs`
+- `src/FlyyOptimizer.Windows/NativeOptimizationPlatform.cs` → `src/Silen.Windows/NativeOptimizationPlatform.cs`
+- `src/FlyyOptimizer.Windows/NativeOptimizationService.cs` → `src/Silen.Windows/NativeOptimizationService.cs`
+- `src/FlyyOptimizer.Windows/NativeTemporaryCleanup.cs` → `src/Silen.Windows/NativeTemporaryCleanup.cs`
+- `src/FlyyOptimizer.Windows/OemDriverService.cs` → `src/Silen.Windows/OemDriverService.cs`
+- `src/FlyyOptimizer.Windows/OptimizationContracts.cs` → `src/Silen.Windows/OptimizationContracts.cs`
+- `src/FlyyOptimizer.Windows/OptimizationJournal.cs` → `src/Silen.Windows/OptimizationJournal.cs`
+- `src/FlyyOptimizer.Windows/PerformanceTweaks.cs` → `src/Silen.Windows/PerformanceTweaks.cs`
+- `src/FlyyOptimizer.Windows/PortableAppUpdater.cs` → `src/Silen.Windows/PortableAppUpdater.cs`
+- `src/FlyyOptimizer.Windows/VisualEffects.cs` → `src/Silen.Windows/VisualEffects.cs`
+- `src/FlyyOptimizer.Windows/WinUtilGameMode.cs` → `src/Silen.Windows/WinUtilGameMode.cs`
+- `src/FlyyOptimizer.Windows/WindowsActions.cs` → `src/Silen.Windows/WindowsActions.cs`
+- `src/FlyyOptimizer.Windows/WindowsCollector.cs` → `src/Silen.Windows/WindowsCollector.cs`
+- `tests/FlyyOptimizer.Gaming.Tests/BundledPresentMonTests.cs` → `tests/Silen.Gaming.Tests/BundledPresentMonTests.cs`
+- `tests/FlyyOptimizer.Gaming.Tests/FakePresentMon/Program.cs` → `tests/Silen.Gaming.Tests/FakePresentMon/Program.cs`
+- `tests/FlyyOptimizer.Gaming.Tests/FlyyOptimizer.Gaming.Tests.csproj` → `tests/Silen.Gaming.Tests/Silen.Gaming.Tests.csproj`
+- `tests/FlyyOptimizer.Gaming.Tests/GamingCaptureTests.cs` → `tests/Silen.Gaming.Tests/GamingCaptureTests.cs`
+- `tests/FlyyOptimizer.Gaming.Tests/PresentMonCsvTests.cs` → `tests/Silen.Gaming.Tests/PresentMonCsvTests.cs`
+- `tests/FlyyOptimizer.Tests/CaptureInputTests.cs` → `tests/Silen.Tests/CaptureInputTests.cs`
+- `tests/FlyyOptimizer.Tests/FlyyOptimizer.Tests.csproj` → `tests/Silen.Tests/Silen.Tests.csproj`
+- `tests/FlyyOptimizer.Tests/OperationLifetimeTests.cs` → `tests/Silen.Tests/OperationLifetimeTests.cs`
+- `tests/FlyyOptimizer.Tests/RecommendationTests.cs` → `tests/Silen.Tests/RecommendationTests.cs`
+- `tests/FlyyOptimizer.Tests/ReportTests.cs` → `tests/Silen.Tests/ReportTests.cs`
+- `tests/FlyyOptimizer.Windows.Tests/AcquisitionNormalizationTests.cs` → `tests/Silen.Windows.Tests/AcquisitionNormalizationTests.cs`
+- `tests/FlyyOptimizer.Windows.Tests/AppUpdateCacheTests.cs` → `tests/Silen.Windows.Tests/AppUpdateCacheTests.cs`
+- `tests/FlyyOptimizer.Windows.Tests/AppUpdateJobTests.cs` → `tests/Silen.Windows.Tests/AppUpdateJobTests.cs`
+- `tests/FlyyOptimizer.Windows.Tests/AppUpdateServiceTests.cs` → `tests/Silen.Windows.Tests/AppUpdateServiceTests.cs`
+- `tests/FlyyOptimizer.Windows.Tests/CancellationTests.cs` → `tests/Silen.Windows.Tests/CancellationTests.cs`
+- `tests/FlyyOptimizer.Windows.Tests/DeviceClassifierTests.cs` → `tests/Silen.Windows.Tests/DeviceClassifierTests.cs`
+- `tests/FlyyOptimizer.Windows.Tests/DriverDownloadTests.cs` → `tests/Silen.Windows.Tests/DriverDownloadTests.cs`
+- `tests/FlyyOptimizer.Windows.Tests/FlyyOptimizer.Windows.Tests.csproj` → `tests/Silen.Windows.Tests/Silen.Windows.Tests.csproj`
+- `tests/FlyyOptimizer.Windows.Tests/FortniteGameTests.cs` → `tests/Silen.Windows.Tests/FortniteGameTests.cs`
+- `tests/FlyyOptimizer.Windows.Tests/FortniteProfileTests.cs` → `tests/Silen.Windows.Tests/FortniteProfileTests.cs`
+- `tests/FlyyOptimizer.Windows.Tests/NativeOptimizationTests.cs` → `tests/Silen.Windows.Tests/NativeOptimizationTests.cs`
+- `tests/FlyyOptimizer.Windows.Tests/OemDriverServiceTests.cs` → `tests/Silen.Windows.Tests/OemDriverServiceTests.cs`
+- `tests/FlyyOptimizer.Windows.Tests/PackageAliasTests.cs` → `tests/Silen.Windows.Tests/PackageAliasTests.cs`
+- `tests/FlyyOptimizer.Windows.Tests/PerformanceControlsTests.cs` → `tests/Silen.Windows.Tests/PerformanceControlsTests.cs`
+- `tests/FlyyOptimizer.Windows.Tests/PerformanceTweaksTests.cs` → `tests/Silen.Windows.Tests/PerformanceTweaksTests.cs`
+- `tests/FlyyOptimizer.Windows.Tests/PortableAppUpdateTests.cs` → `tests/Silen.Windows.Tests/PortableAppUpdateTests.cs`
+- `tests/FlyyOptimizer.Windows.Tests/ReadOnlyCollectionTests.cs` → `tests/Silen.Windows.Tests/ReadOnlyCollectionTests.cs`
+- `tests/FlyyOptimizer.Windows.Tests/RegistryPermissionTests.cs` → `tests/Silen.Windows.Tests/RegistryPermissionTests.cs`
+- `tests/FlyyOptimizer.Windows.Tests/SensorSafetyTests.cs` → `tests/Silen.Windows.Tests/SensorSafetyTests.cs`
+- `tests/FlyyOptimizer.Windows.Tests/TemporaryCleanupTests.cs` → `tests/Silen.Windows.Tests/TemporaryCleanupTests.cs`
+- `tests/FlyyOptimizer.Windows.Tests/WindowsActionsTests.cs` → `tests/Silen.Windows.Tests/WindowsActionsTests.cs`
+
+## Verificación de esta fase
+
+- Pruebas Release: 400 correctas, 1 omitida (consulta OEM de red opcional), 0 fallidas. SDK incluido en `C:\Users\avalo\.codex\runtimes\dotnet-10-sdk`.
+- Compilación Release y publicación autocontenida: correctas, sin advertencias ni errores. Registro: `artifacts/silen-build.log`.
+- ZIP portable: 28 archivos comprobados; arranque desde una carpeta extraída con espacios, sin búsqueda del SDK; 125 comprobaciones de interacción correctas. Registro: `artifacts/silen-portable-verification.log`.
+- Smoke: `Success=true`, `AppliedSystemChanges=false`, `CapturedGaming=false`; pantallas de 1240×820 y 1000×680. Evidencia en `artifacts/portable verification 24790b0242064cef8a02ddef8430bfe0/smoke/`.
+- Metadatos del ejecutable: ProductName y FileDescription `Silen`; versión conservada `1.1.0.0`.
+- Icono sin cambios: mismo blob Git `cd1ba0b7a253307843e73aae6607ffdf1307f52a`. Se conserva temporalmente la F hasta elegir identidad.
+- Revisión independiente: sin problemas materiales. Se ajustó la documentación de las rutas de datos para explicar el fallback.
+- Sin commit, push ni publicación de una release. Nombre provisional según la nueva consulta del usuario; sin código de rediseño hasta su elección.

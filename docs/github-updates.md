@@ -1,6 +1,6 @@
-# Actualizaciones de FlyyOptimizer 1.1.0
+# Actualizaciones de Silen 1.1.0
 
-Al abrir normalmente la app, se consulta la última release estable de `flyybnjj/flyyoptimizer` y se descarga automáticamente `FlyyOptimizer-win-x64.zip` si es más reciente. El usuario pulsa **Reiniciar y actualizar** para instalar; el botón espera a que no haya análisis ni cambios en curso. Los modos de diagnóstico y prueba no consultan actualizaciones automáticamente.
+Al abrir normalmente la app, se consulta la última release estable de `flyybnjj/flyyoptimizer` y se descarga automáticamente `Silen-win-x64.zip` si es más reciente. El usuario pulsa **Reiniciar y actualizar** para instalar; el botón espera a que no haya análisis ni cambios en curso. Los modos de diagnóstico y prueba no consultan actualizaciones automáticamente.
 
 ## Integridad y reemplazo
 
@@ -12,18 +12,20 @@ El reemplazo tiene un bloqueo exclusivo y usa una copia de la instalación anter
 
 ## Compatibilidad y límites
 
-- **1.0 necesita una descarga manual de 1.1.0 una vez.** El código ya distribuido no dispone del actualizador.
-- La aplicación de actualizaciones requiere abrir Flyy normalmente, sin permisos de administrador, y permisos de escritura en su carpeta portable.
-- La confianza depende de GitHub, HTTPS y SHA-256. No hay firma Authenticode independiente.
+- **El primer paso de FlyyOptimizer a Silen requiere instalación manual en una carpeta nueva.** Los clientes antiguos exigen el nombre anterior del ZIP y del ejecutable. Silen exige `Silen-win-x64.zip`, `Silen-win-x64/` y `Silen.exe`; no se ha publicado un puente de actualización como parte de este rename.
+- El repositorio sigue siendo `flyybnjj/flyyoptimizer`; no se sustituye por una URL sin publicar. El bloqueo interno `.flyy-update.lock` se conserva para coordinar ayudantes antiguos y nuevos.
+- Los datos nuevos usan `%LocalAppData%\Silen`; una carpeta existente `%LocalAppData%\FlyyOptimizer` tiene prioridad para conservar historial y respaldos sin moverlos ni dividir sus bloqueos.
+- La aplicación de actualizaciones requiere abrir Silen normalmente, sin permisos de administrador, y permisos de escritura en su carpeta portable.
+- Además de GitHub, HTTPS y SHA-256, se exige `Silen-release.json` firmado con ECDSA P-256 y la clave pública incorporada. Se autentican repositorio, versión, nombre, tamaño y hash antes de descargar y nuevamente al instalar. Un paquete sin firma válida se rechaza. No hay certificado Authenticode público: esta firma de manifiesto no elimina los avisos de Windows.
 - La restauración cubre excepciones durante el reemplazo y fallos al iniciar el nuevo proceso. No detecta un fallo de la app después de un inicio correcto ni recupera automáticamente cortes eléctricos durante el reemplazo.
 - La caché elimina de forma conservadora paquetes y trabajos antiguos reconocidos. Los archivos bloqueados, desconocidos o fuera del límite de enumeración pueden permanecer hasta otra limpieza.
 
 ## Verificación reproducible
 
 ```powershell
-dotnet test FlyyOptimizer.sln -c Release
-.\scripts\build.ps1 -SkipTests -SourceRevisionId (git rev-parse HEAD)
-.\scripts\verify-portable.ps1
+dotnet test Silen.sln -c Release
+.\scripts\build.ps1 -SignRelease -ReleaseTag v1.1.0
+.\scripts\verify-portable.ps1 -RequireSignedRelease -ReleaseTag v1.1.0
 ```
 
 Las pruebas usan HTTP simulado y carpetas aisladas para versiones, destinos, cancelación, límites, hashes, ZIP hostiles, archivos bloqueados y restauración. Las pruebas de interfaz sustituyen descarga y lanzamiento por fixtures. El smoke portable ejecuta el ZIP extraído con PATH limitado a System32 y sin búsqueda del SDK, sin aplicar ajustes reales ni instalar actualizaciones sobre la app en uso.

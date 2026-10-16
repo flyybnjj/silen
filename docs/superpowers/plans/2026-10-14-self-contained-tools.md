@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Execute independent packaging, native-tools and WPF tasks with test-driven-development; use verification-before-completion before publishing.
 
-**Goal:** Entregar FlyyOptimizer autocontenido con acciones útiles en Mejoras y Gaming sin instalar utilidades externas.
+**Goal:** Entregar Silen autocontenido con acciones útiles en Mejoras y Gaming sin instalar utilidades externas.
 
 **Architecture:** Windows implementa INativeOptimizationService; App compone controles con OperationLifetime; Gaming resuelve PresentMon verificado incluido; el build copia el binario y sus avisos/licencias.
 
