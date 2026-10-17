@@ -366,6 +366,8 @@ documentar una regla no acredita que esté activa ni que haya sido probada en UI
 | Selección | Casillas, navegación y listas verificadas en XAML. Las filas de tabla conservan una marca lateral de 1 unidad al perder foco, además del relleno neutro; comprobadas mediante render WPF en claro, oscuro y alto contraste simulado. En alto contraste la marca usa Highlight del sistema. El relleno nunca es su único indicador. Revisión manual en alto contraste real pendiente. |
 | Resumen | Composición refinada y referencia de jerarquía. El PR 1 de datos tempranos publica identidad, capacidad de RAM y unidades durante la carga; «Midiendo… n/10» distingue las trazas parciales. Optimizar PC y Aplicar selección principal/manual esperan al diagnóstico completo actual. Cancelación y fallo descartan parciales; un análisis anterior se identifica literalmente y no habilita Aplicar. Verificación automatizada y capturas WPF; no equivale a recorrido manual. |
 | Carga de Resumen | Pulido del 2026-10-17: un panel de estado y barra ink/line, sin duplicación en el pie; guiones discretos, cifras parciales muted y trazas sin rejilla desde cinco muestras. Botón bloqueado legible y explicación completa. Durante la carga se aplazan los desplegables de detalles/productos no utilizables; vuelven al terminar. Scrollbar local con trazo de 4 y área de interacción de 14; ausente en carga a ambos tamaños. Doce renders simulados y geometría 0/5 comprobada; detalles en docs/ui-carga-resumen-2026-10-17.md. |
+| Diagnóstico y accesibilidad | PR 2 observa recursos mientras un único trabajador completa inventario; Aplicar sigue esperando el diagnóstico completo. PageHost expone el contenido elegido a UI Automation como panel, manteniendo la navegación lateral y la composición. Los contenedores de Resumen no añaden paradas de Tab. Navegar al manual enfoca la primera acción y conserva su encabezado. La ayuda vacía de Optimizar PC se omite al terminar. Regresiones y evidencia en docs/verificacion-cierre-2026-10-17.md. |
+| Contraste temporal y animación | Regresión de 32 poses existentes en claro/oscuro y ambos tamaños: metadatos ≥4,80:1 claro y ≥7,72:1 oscuro. No requiere fondo adicional ni cambios a BLOOM. Sonda de ciclo de vida actual: 33 comprobaciones, cero omisiones, para foco, pausa, minimizar, ocultar, reanudar y cerrar. No acredita todos los fotogramas, GPU, reducir movimiento o alto contraste reales. |
 | RAM y red | Refinada individualmente: dos columnas de lecturas, interpretación y procesos desplegables, una acción principal «Medir DNS» y «Actualizar detalles» secundaria. Se conservan Source Serif 4 y los tokens existentes. Títulos de sección 22/30, lecturas 24/32 con cifras tabulares, cuerpo 15/24 y metadatos 13/20; texto explicativo limitado a 620 unidades. Acción DNS y alcance completos a 1000×680. Estados vacío, pendiente, error local, progreso y cancelación comprobados con servicios simulados. |
 | Drivers | Actualizaciones primero: Buscar es principal mientras no haya ofertas; Descargar toma ese papel cuando hay resultados. El estado literal y los controles de Windows Update se conservan. Catálogo OEM, filtros, compatibilidad y fuentes oficiales siguen accesibles; búsqueda por modelo secundaria. Títulos 22/30 y secciones planas. |
 | Ajustes | Sin segundo wordmark. Apariencia en un grupo acotado y modo experto separado. Un único Aplicar selección manual fuera del desplazamiento, visible solo con el manual abierto. Temporales, recuperación y Deshacer conservan controles y confirmaciones. Copy distingue retirar de purgar. |
@@ -376,7 +378,7 @@ documentar una regla no acredita que esté activa ni que haya sido probada en UI
 | Recuperación existente | Restauración por journal y UndoAsync disponible en Ajustes; conserva validación de conflictos. |
 | Punto previo y Deshacer contextual | Implementados para el lote de Resumen. Preflight mediante ayudante tipado; creado exige ID/fecha y verificación del catálogo. Reutilizado, desactivado o fallido se declaran literalmente y requieren una segunda confirmación antes de continuar con journal. Cancelar no inicia ajustes. Deshacer visible, con nombre, confirmación y revalidación de ID; conserva conflictos y resultados parciales. Pruebas automatizadas con servicios simulados; ensayo real pendiente exclusivamente en VM con snapshot. |
 | Alcance de esta revisión | Refinamiento individual completado para RAM y red, Drivers, Ajustes, Historial y Bloom. La observación del análisis guardado permanece en Drivers y se omite en las tareas que no leen ese análisis. Sin cambios al motor, renombrados ni plural de Bloom. El preflight de Recuperación no se extrapola a otras vistas. El usuario excluyó el ensayo en VM de esta entrega; no se ejecutó ni se acredita. |
-| Verificación manual | No completada: recorrido de teclado, hover/foco, lector de pantalla, movimiento/reducir animaciones y alto contraste real. No marcar estos puntos por pruebas de código o capturas. Guía: docs/prueba-recuperacion-vm.md. |
+| Verificación manual | Automatización real de Windows en Resumen claro: Tab hasta detalles/Optimizar PC y Space para desplegar el selector; nombre y foco comprobados en UI Automation. No equivale a recorrido humano completo, lector de pantalla ni revisión manual de ambos temas. Movimiento ejercitado por sonda de ciclo de vida; reducir animaciones y alto contraste reales siguen pendientes. Guía de recuperación no ejecutada: docs/prueba-recuperacion-vm.md. |
 
 ### Renombrados pendientes
 
@@ -429,7 +431,7 @@ automáticas de uso manual; no acredita el arranque completo de producción.
 - [x] Recuperación simulada: batería existente, sin cambiar preflight ni journal.
 - [ ] Hover, foco, teclado completo, lector de pantalla y alto contraste reales: no recorridos manualmente.
 - [ ] Movimiento/reducir animaciones: validación manual pendiente; animación intacta.
-- [x] Alcance de aquella entrega: PR 1 únicamente. PR 2 fue autorizado posteriormente y sigue pendiente de implementación mientras se atiende este pulido de interfaz. Render y malla siguen fuera de alcance.
+- [x] Alcance de aquella entrega: PR 1 únicamente. PR 2 se implementó y midió el 2026-10-17; evidencia en `docs/rendimiento-pr2-2026-10-17.md`. Render y malla siguen fuera de alcance.
 
 ### Pulido de carga de Resumen · 2026-10-17
 
@@ -446,6 +448,24 @@ capturas de contenido WPF, sin marco nativo. No son mediciones del PC del usuari
 - [ ] Hover/foco, teclado completo, lector de pantalla y alto contraste reales: no recorridos manualmente en esta entrega.
 - [ ] Movimiento, transición completa de producción y escalado DPI del sistema: sin validación manual; no inferirlos de capturas estáticas.
 - Recuperación real y rendimiento de producción: no aplica a este cambio visual; siguen pendientes por separado. No se atribuye mejora de velocidad al PC.
+
+### Cierre de diagnóstico y verificación · 2026-10-17
+
+Evidencia: `docs/rendimiento-pr2-2026-10-17.md` y
+`docs/verificacion-cierre-2026-10-17.md`. Cada medición distingue host auxiliar,
+EXE normal y datos simulados; no atribuir tiempos del host al portable.
+
+- [x] PR 2: diez muestras con sus fechas reales, progreso monótono, errores por proveedor y cancelación/unión de tareas; 670 pruebas unitarias correctas, una OEM opcional omitida.
+- [x] Carga/acción/recuperación simulada: 256 comprobaciones en el portable, incluidas doce capturas y bloqueo de Aplicar. No se aplica un ajuste real del sistema.
+- [x] Contraste: 32 poses con umbral ≥4,5:1 en metadatos; sin modificar la ilustración.
+- [x] Accesibilidad de estructura: UI Automation expone controles del contenido elegido y se actualiza al cambiar de vista.
+- [x] Teclado parcial real: Tab y Space en Resumen claro; no se pulsa Aplicar ni se cierra ningún proceso del usuario.
+- [x] Movimiento, ciclo de vida: sonda actual de 33 comprobaciones sin omisiones; no sustituye evaluación perceptual de fluidez/GPU.
+- [x] Arranque normal del EXE: tres tomas con historial real, OEM, GitHub y perfiles; básicos visibles 1,944 [1,907–1,966] s y trabajo completo 14,872 [14,729–15,847] s. GitHub fallido y cero perfiles en las tres: sin extrapolar a red exitosa o perfiles activos.
+- [x] Portable de escritorio actualizado con 33 archivos verificados por hash; versión anterior conservada. Ubicaciones y revisión de código en el informe de cierre.
+- [ ] Recorrido completo humano de teclado, lector de pantalla, hover en todas las vistas y ambos temas.
+- [ ] Alto contraste real, reducir animaciones y escalado DPI del sistema: no se cambian preferencias globales para marcarlos como probados.
+- Recuperación real, ayudante protegido y fallos reales del actualizador: fuera del cierre elegido por el usuario; continúan en la lista de publicación.
 
 ### Verificación de RAM y red · 2026-10-16
 

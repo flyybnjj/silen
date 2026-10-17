@@ -136,7 +136,87 @@ una actualización. Los perfiles cargados eran cero en las tres tomas: se midió
 su inicialización vacía, no activación de perfiles con juegos abiertos. No se
 aplicaron optimizaciones ni se enviaron conversaciones a IA.
 
-La inicialización normal completa del EXE con historial del usuario, éxito de
-GitHub y perfiles no vacíos sigue sin acreditarse por estas tomas; no se marca
-como verificada por extrapolación. La lectura de teclado y la entrega portable
-se registran aparte en el cierre de verificación.
+### EXE normal de entrega: tres repeticiones adicionales
+
+Se cerró la limitación del host con `scripts/measure-startup.ps1`: entrada normal
+Program.Main/App.OnStartup, sin argumentos, historial y preferencias reales.
+La instrumentación es optativa y local al proceso; con la variable ausente no
+registra nada. Cada informe acredita `ProductionEntryPoint=true`. Revisión del
+EXE: `ca8c663addb723f23662f1d165b2399bc7444c0d`; hash en `delivery.json`.
+
+| Hito desde inicio del proceso, s | Mediana [mín.–máx.] |
+| --- | ---: |
+| Ventana mostrada | 1,033 [1,016–1,049] |
+| Identidad disponible | 1,330 [1,323–1,355] |
+| Capacidad de RAM disponible | 1,466 [1,454–1,485] |
+| Unidades disponibles | 1,476 [1,462–1,494] |
+| Básicos visibles y layout | **1,944 [1,907–1,966]** |
+| Primera muestra | 2,689 [2,672–2,713] |
+| Diez muestras | 12,331 [12,305–12,369] |
+| Snapshot completo | 12,346 [12,320–12,382] |
+| Todo el trabajo de arranque terminado | **14,872 [14,729–15,847]** |
+
+Duraciones de fases: InitializeAsync 13,834 [13,663–14,772] s;
+preferencias/historial 0,282 [0,274–0,285]; colector 11,002 [10,986–11,016];
+OEM 1,102 [0,888–2,025]; herramientas 1,330 [1,314–1,362]; Windows Update
+0,004 [0,004–0,005]; perfiles 0,012 [0,012–0,014]. GitHub concurrente:
+0,311 [0,303–0,489]. No sumar estas medianas como si fueran secuenciales.
+
+El objetivo local de primera información útil ≤2 s se cumple en estas tres
+tomas calientes. **1,94 s no es el arranque completo**: termina a los 14,87 s.
+El host abreviado mostró básicos a 1,710 s y terminó a 11,971 s; usa otro origen
+de reloj y omite servicios. El host con dependencias reales terminó a 14,721 s,
+con rango solapado con el EXE. No convertir sus diferencias en un coste exacto
+de una fase. Visibilidad significa opacidad ≥0,98 más layout, no presentación
+verificada por el compositor.
+
+Evidencia: `production-exe/trial-*/startup.json`, `summary.json` y
+`phase-summary.json`. En los tres arranques GitHub falló y había cero perfiles;
+se incluye ese tiempo, sin acreditar red exitosa ni perfiles activos. No se
+ejecutaron ajustes ni conversaciones de IA. La toma aislada `startup-smoke`
+queda fuera de las tres repeticiones.
+
+## Comprobación del binario final y sensibilidad al observador
+
+Se repitió el protocolo pareado contra f377ab0 con el EXE exacto entregado,
+tres tomas por variante. La sesión de automatización de Windows estaba abierta.
+Resultados en `final-comparison.json`, sin combinar con el lote inicial:
+
+| Métrica | f377ab0, mediana [mín.–máx.] | Entrega, mediana [mín.–máx.] |
+| --- | ---: | ---: |
+| Análisis completo, s | 14,489 [14,473–14,780] | **12,174 [12,103–12,197]** |
+| Ventana, s | 1,052 [1,046–1,167] | 1,075 [1,037–1,079] |
+| Residente, MiB | 192,12 [191,55–193,23] | 198,90 [198,48–199,13] |
+| Privada comprometida, MiB | 443,27 [435,77–492,58] | 453,75 [429,48–465,10] |
+| CPU activa, % del equipo | 1,953 [1,536–2,109] | 3,983 [3,567–5,755] |
+
+El análisis baja 2,315 s (16,0 %), con rangos separados. La CPU de este lote
+es mayor y se conserva explícitamente. Dos controles adicionales sin sondeo
+externo UIA dieron 2,604 % y 4,270 %: retirar solo ese sondeo no lo explica.
+Se cerró entonces la conexión de automatización reiniciando su kernel, sin
+cambiar código ni binarios, y se repitió el mismo protocolo tres veces:
+
+| Métrica | f377ab0, mediana [mín.–máx.] | Entrega, mediana [mín.–máx.] |
+| --- | ---: | ---: |
+| Análisis completo, s | 15,115 [14,854–15,194] | **12,328 [12,127–12,348]** |
+| Ventana, s | 1,156 [1,066–1,198] | 1,158 [1,082–1,163] |
+| Residente, MiB | 191,67 [189,27–194,10] | 189,70 [188,85–190,59] |
+| Privada comprometida, MiB | 458,45 [456,26–483,91] | 442,69 [436,12–451,11] |
+| CPU activa, % del equipo | 0,495 [0,443–0,833] | 0,443 [0,417–0,547] |
+
+Evidencia: `observer-reset-*/` y `fresh-observer-comparison.json`. Las dos
+primeras tentativas de `observer-reset-baseline-1` perdieron foco y tuvieron
+cero cuadros: se excluyen según el protocolo y permanecen en la evidencia;
+su tercera tentativa y las otras cinco tomas conservaron foco y cuadros.
+
+La sensibilidad a la sesión de observación está constatada, pero no se ha
+atribuido a una pila nativa concreta ni demostrado causalidad. Los rangos de
+CPU y residente del lote sin esa conexión se solapan: **no se acredita mejora
+de CPU ni RAM**. La privada es menor en ese lote, pero no en todos los lotes;
+no se atribuye al paralelismo ni se promete un ahorro estable. No mezclar lotes
+ni escoger solo los valores favorables. El análisis sí disminuye con rangos
+separados en las tres comparaciones; PR 2 se conserva. Los objetivos de memoria
+≤170 MiB residente y ≤350 MiB privada siguen sin alcanzarse.
+
+Entrega, teclado y límites manuales: `docs/verificacion-cierre-2026-10-17.md`.
+Todos los datos crudos citados son relativos a `artifacts/faseB-pr2-2026-10-17/`.

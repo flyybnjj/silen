@@ -56,3 +56,22 @@ Sin reinicios, modificaciones de registro/servicios ni cambios globales del PC.
 - Tres repeticiones alternadas del portable: control mediana 14,503 s
   [14,380–14,774]; candidato 11,864 s [11,863–12,076]. Se conserva PR 2 por
   mejora observable. Arranque con dependencias reales y verificación WPF en curso.
+
+- Cierre: `545f94c` PR 2, `fc6dafe` accesibilidad/foco, `cf581ba` diagnóstico
+  optativo del EXE y `ca8c663` ayuda vacía. Fuente congelada en ca8c663 para
+  publicación local; después solo documentación.
+- Resultado final: 670 unitarias correctas, una OEM opcional omitida, 256
+  comprobaciones WPF del portable y 33 del ciclo de vida; build sin advertencias
+  ni errores. Contraste mínimo en 32 poses: 4,8004 claro y 7,7255 oscuro.
+- EXE normal, tres tomas: básicos visibles 1,944 [1,907–1,966] s; arranque
+  completo 14,872 [14,729–15,847] s. GitHub falló y cero perfiles en todas.
+- Comparación final pareada: análisis 14,489 [14,473–14,780] a 12,174
+  [12,103–12,197] s. El control posterior sin conexión de automatización también
+  mejora el análisis; CPU se solapa. Lotes, dos exclusiones por foco y límites
+  conservados en el informe; no se afirma ahorro de CPU/RAM ni mejora del PC.
+- Escritorio actualizado en `C:\Users\avalo\Desktop\Silen - preversion`, con
+  los 33 hashes iguales a artifacts. Carpeta anterior preservada; manifiesto
+  `artifacts/faseB-pr2-2026-10-17/delivery.json`. DESIGN.md actualizado.
+- Pendientes manuales no marcados: lector de pantalla, recorrido completo de
+  teclado/hover en ambos temas, alto contraste real, reducir movimiento y DPI.
+  Ayudante protegido y campañas de publicación continúan fuera del alcance.

@@ -73,10 +73,64 @@ No se inicializaron acciones del sistema ni se cambiaron preferencias de Windows
 En este equipo animaciones estaban activadas, alto contraste desactivado y tier
 de renderizado 2. Reducir movimiento y alto contraste reales no se ejercitaron.
 
-## Registro pendiente de completar en esta entrega
+## Arranque real y medición final
 
-- Medición optativa desde el EXE normal y comparación con el host de fases.
-- Verificación de teclado posterior a la corrección y ciclo de vida de animación.
-- Publicación local, prueba del portable y actualización del escritorio conservando
-  la versión anterior. Registrar hash, revisión y ubicación efectiva.
-- Estado de adopción y límites manuales actualizados al cerrar.
+Tres arranques normales del EXE de entrega: básicos visibles a **1,944
+[1,907–1,966] s**; trabajo completo a **14,872 [14,729–15,847] s**. Incluye
+historial real, OEM, herramientas, GitHub y carga de perfiles. GitHub falló y
+había cero perfiles en las tres tomas; no acredita éxito de red ni perfiles
+activos. El host abreviado termina a 11,971 s y no sustituye esta medición.
+
+El análisis contra f377ab0 bajó de **14,489 [14,473–14,780] a 12,174
+[12,103–12,197] s** en el lote final pareado. Una subida de CPU durante la
+sesión de automatización motivó otra comparación, sin cambiar el binario,
+tras cerrar dicha conexión: 15,115 [14,854–15,194] a 12,328 [12,127–12,348] s;
+CPU 0,495 [0,443–0,833] frente a 0,443 [0,417–0,547] %. Se conservan ambos
+lotes separados. Dos tomas sin foco fueron excluidas y conservadas. No se
+demuestra mejora de CPU/RAM ni se atribuye el ruido a una causa nativa probada.
+Protocolo, fases y datos: `docs/rendimiento-pr2-2026-10-17.md`.
+
+## Teclado real, portable y respaldo
+
+Automatización de teclas reales en Resumen claro: Tab llega a detalles y acción
+principal, foco visible; Space abre selección de producto y su búsqueda está
+accesible. Evidencia: `keyboard-accessibility.txt` y
+`keyboard-product-selector.jpg`. Es un recorrido parcial automatizado, no
+evaluación humana completa ni ensayo con lector de pantalla o tema oscuro.
+
+Build final con .NET SDK 10.0.402: cero errores y cero advertencias. El EXE
+autocontenido pasó **256 comprobaciones de interacción** en salida nueva
+(`delivery-interactions/interaction-checks.json`). No se alteró código después
+de compilar; los commits posteriores solo documentan.
+
+- Revisión de código embebida: `ca8c663addb723f23662f1d165b2399bc7444c0d`.
+- EXE: `artifacts/Silen-win-x64/Silen.exe`.
+- SHA256 EXE: `6EBD770299F74C5B164FDA47E7A75A68F900EDEA1C232FE88540070D17D61808`.
+- ZIP: `artifacts/Silen-win-x64.zip`.
+- SHA256 ZIP: `7D2E21AF3FBE664222A396AFB9EE8D5CE4D5A54D9AB496A4093EE6EC9C1955F8`.
+- Destino: `C:\Users\avalo\Desktop\Silen - preversion\Silen.exe`.
+- Versión anterior conservada íntegra en
+  `C:\Users\avalo\Desktop\Silen - preversion anterior 20261017-8BAE8874`.
+
+Se compararon por SHA256 los **33 archivos** antes de sustituir la carpeta,
+rechazando rutas fuera del escritorio y puntos de reanálisis; ninguna instancia
+del portable estaba en uso. El acceso `Silen.lnk` ya apuntaba al destino correcto
+y no se modificó. Manifiesto: `delivery.json`. Preversión local; sin publicación
+externa ni cambios en firmas o política de actualizaciones.
+
+## Checklist de cierre
+
+- [x] 670 pruebas unitarias; una OEM opcional omitida, sin omisiones ocultadas.
+- [x] 256 comprobaciones del portable final; build sin errores ni advertencias.
+- [x] 32 poses de contraste y 33 comprobaciones del ciclo de vida de movimiento.
+- [x] Tres medidas pareadas por lote y tres arranques normales; diez muestras
+  conservadas con fechas reales y acciones bloqueadas hasta resultado completo.
+- [x] Entrega en artifacts y escritorio, versión anterior preservada y hashes comprobados.
+- [x] DESIGN.md y su Estado de adopción actualizados con evidencia y límites.
+- [ ] Recorrido humano completo de teclado, lector de pantalla y hover en ambos temas.
+- [ ] Alto contraste real de Windows, reducir movimiento y escalado DPI del sistema.
+- Recuperación real, instalación protegida del ayudante y fallos reales del
+  actualizador: fuera del cierre elegido; no se presentan como probados.
+
+Los ficheros de evidencia citados sin prefijo están en
+`artifacts/faseB-pr2-2026-10-17/`. No se aplicaron optimizaciones al PC del usuario.
