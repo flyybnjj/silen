@@ -216,6 +216,13 @@ La detección comienza al abrir. Sin datos se muestra una explicación breve; si
 falla, Reintentar. No repetir Analizar en todas las vistas. Conservar orden de
 lectura y teclado al adaptar cada tarea.
 
+El contenido permanece visible e interactivo desde el primer fotograma; la
+introducción de Bloom no retrasa su lectura. El velo de legibilidad está presente
+desde el inicio. Publicar modelo, CPU y capacidad de RAM de fuentes locales antes
+de WMI; completar unidades y GPU al recibirlas. Esta vista previa no es un informe
+terminado, no reutiliza porcentajes guardados ni habilita Aplicar. El historial
+no debe bloquear la primera detección del equipo.
+
 ## Elevation & Depth
 
 Superficies planas y líneas de una unidad lógica, sin sombras decorativas ni vidrio.
@@ -362,6 +369,7 @@ documentar una regla no acredita que esté activa ni que haya sido probada en UI
 
 | Área | Estado en la fecha de revisión |
 | --- | --- |
+| Primera información al abrir | Revisión 0889f1e: previa local de modelo/CPU/RAM antes de WMI; historial después del diagnóstico. Contenido visible desde el primer fotograma, velo de legibilidad desde el inicio y mascota conservada. Tres arranques normales: previa visible 1,184 [1,151–1,212] s; básicos con unidades 1,285 [1,259–1,314] s frente a 1,920 [1,919–1,968] s. No equivale a arranque completo ni habilita Aplicar. 673 unitarias, una OEM omitida, 259 comprobaciones WPF de fuentes y portable. Evidencia en `docs/inicio-inmediato-2026-10-17.md`. |
 | Identidad y tokens | Source Serif 4, Lino, variantes claras/oscuras y brick están en los recursos. Los nombres WPF conservan los alias indicados abajo. |
 | Selección | Casillas, navegación y listas verificadas en XAML. Las filas de tabla conservan una marca lateral de 1 unidad al perder foco, además del relleno neutro; comprobadas mediante render WPF en claro, oscuro y alto contraste simulado. En alto contraste la marca usa Highlight del sistema. El relleno nunca es su único indicador. Revisión manual en alto contraste real pendiente. |
 | Resumen | Composición refinada y referencia de jerarquía. El PR 1 de datos tempranos publica identidad, capacidad de RAM y unidades durante la carga; «Midiendo… n/10» distingue las trazas parciales. Optimizar PC y Aplicar selección principal/manual esperan al diagnóstico completo actual. Cancelación y fallo descartan parciales; un análisis anterior se identifica literalmente y no habilita Aplicar. Verificación automatizada y capturas WPF; no equivale a recorrido manual. |
@@ -466,6 +474,20 @@ EXE normal y datos simulados; no atribuir tiempos del host al portable.
 - [ ] Recorrido completo humano de teclado, lector de pantalla, hover en todas las vistas y ambos temas.
 - [ ] Alto contraste real, reducir animaciones y escalado DPI del sistema: no se cambian preferencias globales para marcarlos como probados.
 - Recuperación real, ayudante protegido y fallos reales del actualizador: fuera del cierre elegido por el usuario; continúan en la lista de publicación.
+
+### Información inmediata al entrar · 2026-10-17
+
+Evidencia: `docs/inicio-inmediato-2026-10-17.md`; revisión de código 0889f1e.
+
+- [x] Vista previa local de modelo/CPU/RAM anterior a WMI e historial, sin datos de uso guardados ni puntuaciones.
+- [x] Contenido visible/interactivo en el primer fotograma y velo de legibilidad presente; Bloom mantiene movimiento y pausas.
+- [x] Aplicar bloqueado, GPU y muestras pendientes literales; cancelación retira parciales. 673 unitarias y 259 comprobaciones WPF, una OEM opcional omitida.
+- [x] 32 poses de contraste ≥4,5:1 y 33 comprobaciones de ciclo de vida sin omisiones, con expectativa actualizada de contenido visible al iniciar.
+- [x] Capturas de previa en claro/oscuro a 1240×820 con datos simulados. Batería existente conserva carga a 1000×680 y doce estados/tamaños/temas.
+- [x] Tres arranques normales alternados por binario; básicos con unidades 1,920→1,285 s, rangos separados; arranque completo con rangos solapados y sin mejora acreditada.
+- [x] Portable de artifacts y escritorio, anterior conservado y 33 archivos verificados por hash.
+- [ ] Recorrido humano completo de teclado/hover y lector de pantalla.
+- [ ] Alto contraste, reducir movimiento, DPI reales y presentación GPU.
 
 ### Verificación de RAM y red · 2026-10-16
 
