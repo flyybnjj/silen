@@ -17,7 +17,10 @@ internal static partial class InteractionSmokeChecks
     public static async Task<IReadOnlyList<string>> RunAsync(string directory, Dispatcher dispatcher)
     {
         var checks = new List<string>();
+
+        await RunSummaryAccessibilityChecksAsync(directory, checks);
         await RunSummaryLoadingPresentationChecksAsync(directory, dispatcher, checks);
+        await RunSummaryMotionContrastChecksAsync(directory, checks);
         await RunEarlyScanChecksAsync(directory, dispatcher, checks);
         await RunRemainingViewChecksAsync(directory, checks);
         await RunUnfocusedTableSelectionChecksAsync(directory, checks);
@@ -844,7 +847,7 @@ internal static partial class InteractionSmokeChecks
             window.UpdateLayout();
             var manualSection = (FrameworkElement)window.FindName("ExpertManualOptions");
             var manualTop = manualSection.TransformToAncestor(window).Transform(new Point()).Y;
-            if (manualTop < 0 || manualTop >= window.ActualHeight - 80) throw new InvalidOperationException("Abrir el manual debe llevar al usuario a su selección.");
+            if (manualTop < 0 || manualTop >= window.ActualHeight - 80) throw new InvalidOperationException($"Abrir el manual debe llevar al usuario a su selección. Y={manualTop}, alto={window.ActualHeight}, activa={window.IsActive}.");
             checks.Add("Abrir el optimizador manual desplaza la vista hasta sus controles");
             if (!Visuals<Button>(window).Any(button => button.Command == model.Tools.ApplyManualCommand && button.IsVisible)) throw new InvalidOperationException("Falta Aplicar en el manual experto.");
             checks.Add("El modo experto muestra su botón Aplicar selección manual separado del optimizador principal");
@@ -1680,3 +1683,4 @@ internal static partial class InteractionSmokeChecks
         }
     }
 }
+

@@ -61,10 +61,22 @@ public partial class MainWindow : Window
                 if (current is Expander expander) expander.IsExpanded = true;
             UpdateLayout();
             if (!section.IsVisible) return;
-            section.BringIntoView(new Rect(0, 0, Math.Max(1, section.ActualWidth), Math.Min(160, Math.Max(1, section.ActualHeight))));
-            if (IsActive && section is Panel panel && panel.Children.OfType<Control>().FirstOrDefault(c => c.Focusable && c.IsEnabled) is { } control)
+            if (IsActive && FirstAction(section) is { } control)
                 control.Focus();
+            // El cambio de foco puede desplazar la lista; conservar después el
+            // encabezado y la primera opción, no enfocar el contenedor completo.
+            section.BringIntoView(new Rect(0, 0, Math.Max(1, section.ActualWidth), Math.Min(160, Math.Max(1, section.ActualHeight))));
         }));
+    }
+
+    private static Control? FirstAction(DependencyObject root)
+    {
+        if (root is Control { IsVisible: true, IsEnabled: true, Focusable: true } control &&
+            control is System.Windows.Controls.Primitives.ButtonBase or System.Windows.Controls.Primitives.TextBoxBase or System.Windows.Controls.Primitives.Selector)
+            return control;
+        for (var index = 0; index < System.Windows.Media.VisualTreeHelper.GetChildrenCount(root); index++)
+            if (FirstAction(System.Windows.Media.VisualTreeHelper.GetChild(root, index)) is { } child) return child;
+        return null;
     }
 
     private async void HandleClosing(object? sender, CancelEventArgs args)

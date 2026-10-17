@@ -11,6 +11,35 @@ namespace Silen.App;
 
 internal static partial class InteractionSmokeChecks
 {
+    private static async Task RunSummaryAccessibilityChecksAsync(string directory, List<string> checks)
+    {
+        using var model = new MainViewModel(Path.Combine(directory, "summary-accessibility-history"), new ViewModelServices { CreateNativeTools = () => new FixtureOptimizationService() });
+        model.ApplySnapshot(new SystemSnapshot { Samples = [new() { MemoryPercent = 50 }] }, isCurrent: true);
+        var window = new MainWindow(model) { ShowActivated = false, ShowInTaskbar = false, Left = -10000, Top = -10000 };
+        try
+        {
+            window.Show(); await window.Dispatcher.InvokeAsync(window.UpdateLayout, DispatcherPriority.ContextIdle);
+            var root = System.Windows.Automation.Peers.UIElementAutomationPeer.CreatePeerForElement(window.Pages)!;
+            static IEnumerable<System.Windows.Automation.Peers.AutomationPeer> Descendants(System.Windows.Automation.Peers.AutomationPeer peer)
+            {
+                foreach (var child in peer.GetChildren() ?? [])
+                {
+                    yield return child;
+                    foreach (var descendant in Descendants(child)) yield return descendant;
+                }
+            }
+            if (!Descendants(root).Any(peer => peer.GetName() == "Preparar optimización del PC sin aplicar cambios"))
+                throw new InvalidOperationException("El contenido de Resumen y su acción principal deben aparecer en el árbol UI Automation aunque las cabeceras de pestaña estén ocultas.");
+            if (window.Pages.Focusable || window.Pages.IsTabStop || ((ContentControl)window.FindName("SummaryOptimizationContent")).IsTabStop)
+                throw new InvalidOperationException("Los contenedores sin acción no deben añadir paradas de Tab antes del botón principal.");
+            model.SelectedPage = 1; await window.Dispatcher.InvokeAsync(window.UpdateLayout, DispatcherPriority.ContextIdle);
+            if (root.GetName() != "Contenido de RAM y red" || !Descendants(root).Any(peer => peer.GetName() == "Medir DNS"))
+                throw new InvalidOperationException("El árbol accesible debe actualizar nombre y controles al cambiar de vista.");
+            checks.Add("El contenedor de vistas expone la acción de Resumen en UI Automation sin pestañas visuales duplicadas");
+        }
+        finally { await model.PrepareToCloseAsync(); window.Close(); }
+    }
+
     private static async Task RunSummaryLoadingPresentationChecksAsync(string directory, Dispatcher dispatcher, List<string> checks)
     {
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -123,6 +152,42 @@ internal static partial class InteractionSmokeChecks
         finally { release.TrySetResult(); await model.PrepareToCloseAsync(); window.Close(); ThemeManager.Apply("Claro"); }
     }
 
+    private static async Task RunSummaryMotionContrastChecksAsync(string directory, List<string> checks)
+    {
+        using var model = new MainViewModel(Path.Combine(directory, "motion-contrast-history"), new ViewModelServices { CreateNativeTools = () => new FixtureOptimizationService() });
+        model.ApplySnapshot(new SystemSnapshot
+        {
+            Machine = new() { Manufacturer = "Equipo de prueba", Model = "Modelo", CpuName = "Procesador de prueba", GpuName = "Gráficos de prueba", TotalMemoryGb = 16 },
+            Samples = Enumerable.Range(0, 10).Select(_ => new MetricSample { CpuPercent = 24, MemoryPercent = 94, GpuPercent = 4, GpuTemperature = 60 }).ToList()
+        }, isCurrent: true);
+        var window = new MainWindow(model) { ShowActivated = false, ShowInTaskbar = false, Left = -10000, Top = -10000 };
+        var observations = new List<object>();
+        var minimum = double.PositiveInfinity;
+        try
+        {
+            window.Show();
+            foreach (var theme in new[] { "Claro", "Oscuro" })
+            foreach (var size in new[] { new Size(1240, 820), new Size(1000, 680) })
+            foreach (var second in new[] { 1.8, 2.8, 3.8, 4.8, 5.8, 6.8, 7.8, 8.8 })
+            {
+                ThemeManager.Apply(theme); window.Width = size.Width; window.Height = size.Height;
+                window.CaptureMotionAt(second);
+                var image = $"contraste-bloom-{theme}-{size.Width}x{size.Height}-{second.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)}.png";
+                await RenderFixtureWindowAsync(window, Path.Combine(directory, image));
+                var contrast = CaptureMetadataContrast(window,
+                    (TextBlock)window.FindName("SummaryCpuTemperature"), (TextBlock)window.FindName("SummaryMemoryCapacity"), (TextBlock)window.FindName("SummaryGpuTemperature"));
+                var poseMinimum = JsonSerializer.SerializeToElement(contrast).EnumerateArray().Min(row => row.GetProperty("MinimumContrast").GetDouble());
+                minimum = Math.Min(minimum, poseMinimum);
+                observations.Add(new { Theme = theme, size.Width, size.Height, Second = second, Minimum = poseMinimum, Metadata = contrast, Image = image });
+            }
+            await File.WriteAllTextAsync(Path.Combine(directory, "resumen-contraste-poses.json"), JsonSerializer.Serialize(new { FixtureOnly = true, Minimum = minimum, Observations = observations,
+                Limit = "32 poses deterministas de la animación existente, no una medida continua de todos los fotogramas, ni de fluidez/GPU o preferencias reales de Windows." }, ReportStore.JsonOptions));
+            if (minimum < 4.5) throw new InvalidOperationException($"El contraste de metadatos sobre una pose de BLOOM es {minimum:F2}:1; requiere un fondo neutro local antes de acreditar AA.");
+            checks.Add("Contraste de metadatos ≥4,5:1 en 32 poses temporizadas de BLOOM, claro/oscuro y ambos tamaños, sin modificar la ilustración");
+        }
+        finally { await model.PrepareToCloseAsync(); window.Close(); ThemeManager.Apply("Claro"); }
+    }
+
     private static IReadOnlyList<object> CaptureMetadataContrast(Window window, params TextBlock[] texts)
     {
         var visual = (FrameworkElement)window.Content;
@@ -150,3 +215,4 @@ internal static partial class InteractionSmokeChecks
         return rows;
     }
 }
+
