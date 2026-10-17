@@ -15,12 +15,12 @@ internal static partial class InteractionSmokeChecks
             {
                 window.CaptureMotionAt(0);
                 var chrome = (System.Windows.FrameworkElement)window.FindName("ApplicationChrome");
-                if (chrome.Opacity < .98 || !chrome.IsHitTestVisible)
-                    throw new InvalidOperationException("La introducción de Bloom no debe ocultar ni bloquear la información del equipo.");
+                if (!model.ShowStartupLoading || chrome.IsHitTestVisible)
+                    throw new InvalidOperationException("Bloom debe ocupar la carga inicial hasta tener identidad y primera muestra, sin permitir acciones sobre datos pendientes.");
             }
             finally { window.Close(); }
         }
-        checks.Add("El contenido es visible e interactivo desde el primer fotograma, sin esperar la introducción de Bloom");
+        checks.Add("Bloom ocupa el primer fotograma hasta la primera lectura; no se presenta el equipo sin datos");
         await VerifyBasicPreviewAsync(directory);
         checks.Add("Modelo, CPU y RAM se muestran sin muestra ni GPU inventada; cancelar retira la vista previa y no permite aplicar");
         await VerifyDetectionPrecedesHistoryAsync(directory);

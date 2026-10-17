@@ -15,6 +15,7 @@ public partial class MainWindow : Window
     public MainWindow(MainViewModel model, bool animateStartup = false)
     {
         this.model = model;
+        if (animateStartup && !model.HasSnapshot) model.BeginStartupPresentation();
         ThemeManager.Initialize();
         InitializeComponent();
         DataContext = model;
@@ -27,14 +28,35 @@ public partial class MainWindow : Window
             if (IsActive && model.SelectedPage == 1 && model.CanStartOperation) model.RamNetwork.UpdateLive();
         }, Dispatcher);
         Closing += HandleClosing;
+        PreviewKeyDown += HandleDialogKey;
         model.SectionNavigationRequested += NavigateToSection;
+        model.PropertyChanged += PresentSelectionDialog;
         model.AppUpdate.RestartRequested += RestartWithUpdate;
-        Closed += (_, _) => { ramTimer.Stop(); ribbonAnimator.Dispose(); model.Bloom.Messages.CollectionChanged -= BloomMessagesChanged; model.SectionNavigationRequested -= NavigateToSection; model.AppUpdate.RestartRequested -= RestartWithUpdate; };
+        Closed += (_, _) => { ramTimer.Stop(); ribbonAnimator.Dispose(); model.Bloom.Messages.CollectionChanged -= BloomMessagesChanged; model.SectionNavigationRequested -= NavigateToSection; model.PropertyChanged -= PresentSelectionDialog; model.AppUpdate.RestartRequested -= RestartWithUpdate; };
     }
 
     internal void CaptureMotionAt(double seconds) => ribbonAnimator.CaptureAt(seconds);
     internal void CaptureArtworkAt(double phase) => ribbonAnimator.CaptureArtworkAt(phase);
     internal RibbonAnimator MotionDiagnostics => ribbonAnimator;
+
+    private void HandleDialogKey(object sender, System.Windows.Input.KeyEventArgs args)
+    {
+        if (args.Key != System.Windows.Input.Key.Escape || !model.IsOptimizationDialogOpen) return;
+        if (model.IsBusy && model.CancelCommand.CanExecute(null)) { model.CancelCommand.Execute(null); args.Handled = true; return; }
+        if (model.CloseOptimizationDialogCommand.CanExecute(null)) model.CloseOptimizationDialogCommand.Execute(null);
+        args.Handled = true;
+    }
+
+    private void PresentSelectionDialog(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName is not (nameof(MainViewModel.IsOptimizationDialogOpen) or nameof(MainViewModel.IsBusy))) return;
+        if (!model.IsOptimizationDialogOpen || !IsActive) return;
+        _ = Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
+        {
+            if (closingRequested || !model.IsOptimizationDialogOpen || OptimizationDialog.IsKeyboardFocusWithin) return;
+            UpdateLayout(); FirstAction(OptimizationDialog)?.Focus();
+        }));
+    }
 
     private void BloomMessagesChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs args) =>
         _ = Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() => BloomChatScroll.ScrollToEnd()));

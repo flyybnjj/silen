@@ -44,8 +44,11 @@ public sealed partial class ToolsViewModel
             var applied = new List<string>(); var partial = new List<string>(); var messages = new List<string>(); var failed = 0; var cancelled = false;
             try
             {
+                var finished = 0;
                 foreach (var item in selection)
                 {
+                    ActivityProgress?.Invoke("Estoy aplicando tu selección.", $"{finished} de {selection.Length} pasos terminados · {item.Title}");
+                    await Task.Yield();
                     token.ThrowIfCancellationRequested();
                     OptimizationOutcome result;
                     try
@@ -60,6 +63,7 @@ public sealed partial class ToolsViewModel
                     }
                     catch (OperationCanceledException) { throw; }
                     catch { result = new(false, "No se completó. Actualiza estado y revisa los respaldos antes de reintentar."); }
+                    finished++;
                     messages.Add(item.Title + ": " + result.Message);
                     if (!result.Success) failed++;
                     if (result.Success) PendingManual.Remove(item);
@@ -73,6 +77,7 @@ public sealed partial class ToolsViewModel
                 if (applied.Count > 0) ChangesApplied?.Invoke(applied);
                 if (partial.Count > 0) PartialChangesApplied?.Invoke(partial);
                 actionError = failed > 0;
+                ActivityResult?.Invoke(cancelled ? "He detenido la selección." : failed > 0 ? "Hay pasos que requieren revisión." : "He terminado tu selección.", $"{SpanishText.Count(applied.Count, "cambio completado", "cambios completados")} · {SpanishText.Count(partial.Count, "cambio parcial", "cambios parciales")} · {SpanishText.Count(failed, "paso con error", "pasos con error")}. Consulta los respaldos antes de reintentar.");
                 Status = $"{SpanishText.Count(applied.Count, "cambio completado", "cambios completados")}; {SpanishText.Count(partial.Count, "cambio parcial", "cambios parciales")}; {SpanishText.Count(failed, "paso con error", "pasos con error")}. " + (partial.Count > 0 ? "Revisa los respaldos de los cambios parciales antes de reintentar. " : "") + (cancelled || token.IsCancellationRequested ? "Operación cancelada. " : "") + string.Join("\n", messages);
                 try { await RefreshStateAsync(CancellationToken.None); } catch { Status += " Revisa los respaldos al actualizar el estado."; }
                 Changed(null);

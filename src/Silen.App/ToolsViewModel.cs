@@ -102,7 +102,7 @@ public sealed partial class ToolsViewModel : ObservableObject
         await RefreshTempTotalAsync(token);
         await RefreshRecoveryAsync(token);
         actionError = false; Changed(nameof(HasActionError));
-        Status = "Ajustes actuales leídos. Solo se aplican al pulsar un control.";
+        Status = "Ajustes actuales leídos. Añade los cambios y confirma Aplicar selección manual.";
     });
 
     internal async Task RefreshStateAsync(CancellationToken token)
@@ -211,7 +211,7 @@ public sealed partial class ToolsViewModel : ObservableObject
         if (!confirmManual("Retirar temporales seleccionados", $"{SpanishText.Form(ids.Length, "Se conservará", "Se conservarán")} {SpanishText.Count(ids.Length, "archivo", "archivos")} en recuperación. El espacio se libera únicamente con una purga definitiva. ¿Continuar?")) return Task.CompletedTask;
         return run("Limpiando los temporales seleccionados…", async token =>
         {
-            var result = await service.CleanTempAsync(ids, token);
+            var result = await CleanWithProgressAsync(ids, token);
             CleanupStatus = CleanupResultLabel(result);
             TemporaryFiles.Clear(); previewed = false; Changed(null);
         });
@@ -247,8 +247,9 @@ public sealed partial class ToolsViewModel : ObservableObject
         try
         {
             var fresh = await service.PreviewTempAsync(token);
-            if (fresh.Files.Count == 0 || !confirmManual("Limpiar temporales con recuperación", $"{SpanishText.Form(fresh.Files.Count, "Se retirará", "Se retirarán")} {SpanishText.Count(fresh.Files.Count, "archivo", "archivos")} ({Size(fresh.TotalBytes)}) de la carpeta temporal del usuario. El lote quedará disponible para restaurarlo o purgarlo. No se libera espacio hasta confirmar una purga definitiva. ¿Continuar?")) return;
-            var result = await service.CleanTempAsync(fresh.Files.Select(file => file.Id).ToArray(), token);
+            if (fresh.Files.Count == 0) { CleanupStatus = "No hay temporales elegibles en esta tanda."; ActivityResult?.Invoke("No hay temporales para retirar.", "Solo revisé los temporales elegibles de tu usuario."); return; }
+            if (!confirmManual("Limpiar temporales con recuperación", $"{SpanishText.Form(fresh.Files.Count, "Se retirará", "Se retirarán")} {SpanishText.Count(fresh.Files.Count, "archivo", "archivos")} ({Size(fresh.TotalBytes)}) de la carpeta temporal del usuario. El lote quedará disponible para restaurarlo o purgarlo. No se libera espacio hasta confirmar una purga definitiva. ¿Continuar?")) { ActivityResult?.Invoke("He cancelado la limpieza.", "No he retirado archivos. Puedes revisar las opciones cuando quieras."); return; }
+            var result = await CleanWithProgressAsync(fresh.Files.Select(file => file.Id).ToArray(), token);
             CleanupStatus = CleanupResultLabel(result);
             TemporaryFiles.Clear(); previewed = false;
         }

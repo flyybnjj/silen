@@ -64,7 +64,13 @@ public sealed partial class PcOptimizationViewModel : ObservableObject
     public double ProgressPercent => total == 0 ? 0 : 100d * completed / total;
     public string SelectionSummary => $"{SpanishText.Count(Options.Count(row => row.Selected), "seleccionado", "seleccionados")} · {SpanishText.Count(Options.Count(row => row.Option.Available), "disponible", "disponibles")} · {SpanishText.Count(Options.Count(row => row.Option.AlreadyApplied), "ya aplicado", "ya aplicados")}";
 
-    internal Task<bool> PrepareAsync() => run("Preparando ajustes del PC…", async token =>
+    internal event Action? DialogRequested;
+    internal event Action<string, string>? ActivityResult;
+    internal Task<bool> PrepareAsync()
+    {
+        if (!canRun()) return Task.FromResult(false);
+        DialogRequested?.Invoke();
+        return run("Preparando ajustes del PC…", async token =>
     {
         preparing = true; Steps.Clear(); completed = 0; total = 0; progressTitle = "Consultando ajustes y permisos";
         SetStatus("Preparando opciones del PC…", false); Changed(null);
@@ -79,7 +85,8 @@ public sealed partial class PcOptimizationViewModel : ObservableObject
         catch (OperationCanceledException) { SetStatus("Preparación cancelada. No se cambió Windows.", false); throw; }
         catch (Exception ex) { SetStatus($"No se pudo preparar la selección: {ex.Message}", true); throw; }
         finally { preparing = false; Changed(null); }
-    });
+        });
+    }
 
     internal async Task<bool> ApplyAsync()
     {
@@ -100,6 +107,7 @@ public sealed partial class PcOptimizationViewModel : ObservableObject
                 if (!await recovery.PrepareBatchAsync(token))
                 {
                     SetStatus("No se inició el lote. Revisa el estado de Recuperación antes de reintentar.", false);
+                    ActivityResult?.Invoke("No he iniciado los ajustes.", "Revisa Recuperación. No se inició ningún paso del lote.");
                     return;
                 }
                 token.ThrowIfCancellationRequested();
@@ -112,6 +120,8 @@ public sealed partial class PcOptimizationViewModel : ObservableObject
                 var partial = result.Steps.Where(step => !step.Success && step.Changed && !step.Skipped).Select(step => step.Id).ToArray();
                 if (partial.Length > 0) PartialChangesApplied?.Invoke(partial);
                 completed = Steps.Count; SetStatus(result.Message + (partial.Length > 0 ? $" {SpanishText.Count(partial.Length, "cambio parcial", "cambios parciales")}: revisa los respaldos; no se confirmó su aplicación completa ni su beneficio." : ""), result.Cancelled || result.Failed > 0 || result.Skipped > 0);
+                ActivityResult?.Invoke(result.Cancelled ? "He detenido la optimización." : result.Failed > 0 || result.Skipped > 0 || result.Uncertain > 0 ? "Hay pasos que requieren revisión." : "He terminado tu selección.",
+                    $"{SpanishText.Count(result.Applied, "cambio completado", "cambios completados")} · {SpanishText.Count(partial.Length, "cambio parcial", "cambios parciales")} · {SpanishText.Count(result.Failed, "paso con error", "pasos con error")} · {SpanishText.Count(result.Skipped, "paso sin aplicar", "pasos sin aplicar")}. {SpanishText.Count(result.Uncertain, "verificación incierta", "verificaciones inciertas")}. Revisa el resultado y los respaldos antes de continuar.");
             }
             catch (OperationCanceledException) { SetStatus("Proceso cancelado. Revisa los cambios guardados antes de volver a aplicar.", true); throw; }
             catch (Exception ex) { SetStatus($"No se completó el proceso: {ex.Message}. Revisa los respaldos en Ajustes.", true); throw; }

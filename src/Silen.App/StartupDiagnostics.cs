@@ -66,7 +66,7 @@ internal sealed class StartupDiagnostics : IDisposable
 
     private void CheckVisibility()
     {
-        if (chrome is null || chrome.Opacity < .98) return;
+        if (chrome is null || chrome.Visibility != Visibility.Visible || chrome.Opacity < .98 || model?.ShowStartupLoading == true) return;
         lock (gate)
             if (milestones.ContainsKey("Identity") && milestones.ContainsKey("RamCapacity") && !milestones.ContainsKey("FirstInformationVisibleLayout"))
             { chrome.UpdateLayout(); Mark("FirstInformationVisibleLayout"); }
@@ -80,7 +80,7 @@ internal sealed class StartupDiagnostics : IDisposable
         Mark("AllStartupWork");
         // Lista explícita: no serializar modelo, rutas, errores de red ni claves.
         var result = new { ProductionEntryPoint = productionEntry, Success = model.HasCompletedResult,
-            Origin = "Milisegundos desde Process.StartTime, con un offset UTC inicial y reloj monotónico para las fases; visibilidad exige opacidad ≥0,98 y layout, no presentación GPU.",
+            Origin = "Milisegundos desde Process.StartTime, con un offset UTC inicial y reloj monotónico para las fases; visibilidad exige contenido visible, carga de Bloom retirada, opacidad ≥0,98 y layout, no presentación GPU.",
             Milestones = milestones, Phases = phases, Profiles = model.Settings.TimerProfiles.Count,
             GithubFailed = model.AppUpdate.HasError, Samples = model.Snapshot?.Samples.Count,
             SampleTimes = model.Snapshot?.Samples.Select(sample => sample.At).ToArray() };

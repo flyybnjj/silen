@@ -17,6 +17,7 @@ internal static partial class InteractionSmokeChecks
     public static async Task<IReadOnlyList<string>> RunAsync(string directory, Dispatcher dispatcher)
     {
         var checks = new List<string>();
+        await RunBloomWorkflowChecksAsync(directory, checks);
         await RunStartupDiagnosticsChecksAsync(directory, checks);
         await RunSummaryAccessibilityChecksAsync(directory, checks);
         await RunSummaryLoadingPresentationChecksAsync(directory, dispatcher, checks);
@@ -462,7 +463,8 @@ internal static partial class InteractionSmokeChecks
         await RenderFixtureWindowAsync(window, Path.Combine(directory, "app-update-downloading.png"));
         updater.ReleaseDownload.TrySetResult(); await downloading;
         check(model.AppUpdate.IsReady && model.AppUpdate.RestartCommand.CanExecute(null) && !helperLaunched, "Verified automatic download waits for an explicit restart request");
-        check(VisibleText(window, true).Contains("Reiniciar y actualizar"), "Ready update exposes the explicit restart control in the actual sidebar");
+        model.SelectedPage = 3; window.UpdateLayout();
+        check(VisibleText(window, true).Contains("Reiniciar y actualizar"), "La actualización preparada muestra Reiniciar y actualizar solo en Ajustes");
         await RenderFixtureWindowAsync(window, Path.Combine(directory, "app-update-ready.png"));
         window.Width = window.MinWidth; window.Height = window.MinHeight;
         await RenderFixtureWindowAsync(window, Path.Combine(directory, "app-update-ready-minimum.png"));
@@ -672,7 +674,7 @@ internal static partial class InteractionSmokeChecks
                 ThemeManager.Apply(theme);
                 await RenderFixtureWindowAsync(window, Path.Combine(directory, $"recuperacion-creado-{theme.ToLowerInvariant()}.png"));
                 var expected = ((SolidColorBrush)Application.Current.Resources["Text"]).Color;
-                var resultTexts = Visuals<TextBlock>((DependencyObject)window.FindName("PcOptimizationSection"))
+                var resultTexts = Visuals<TextBlock>((DependencyObject)window.FindName("OptimizationDialog"))
                     .Where(text => text.IsVisible && (text.Text == model.Recovery.PointStatus || text.Text == model.PcOptimization.Status)).ToArray();
                 if (resultTexts.Length != 2 || resultTexts.Any(text => text.Foreground is not SolidColorBrush brush || brush.Color != expected))
                     throw new InvalidOperationException("El resultado y el punto de restauración deben usar tinta del tema, también en oscuro.");
@@ -848,7 +850,7 @@ internal static partial class InteractionSmokeChecks
             var manualSection = (FrameworkElement)window.FindName("ExpertManualOptions");
             var manualTop = manualSection.TransformToAncestor(window).Transform(new Point()).Y;
             if (manualTop < 0 || manualTop >= window.ActualHeight - 80) throw new InvalidOperationException($"Abrir el manual debe llevar al usuario a su selección. Y={manualTop}, alto={window.ActualHeight}, activa={window.IsActive}.");
-            checks.Add("Abrir el optimizador manual desplaza la vista hasta sus controles");
+            checks.Add("Abrir el optimizador manual muestra sus controles en un diálogo modal");
             if (!Visuals<Button>(window).Any(button => button.Command == model.Tools.ApplyManualCommand && button.IsVisible)) throw new InvalidOperationException("Falta Aplicar en el manual experto.");
             checks.Add("El modo experto muestra su botón Aplicar selección manual separado del optimizador principal");
             ThemeManager.Apply("Oscuro"); window.UpdateLayout();
@@ -1125,7 +1127,7 @@ internal static partial class InteractionSmokeChecks
             await RenderFixtureWindowAsync(window, Path.Combine(directory, "pc-seleccion-minimo.png"));
             var applyButton = Visuals<Button>(window).Single(button => button.IsVisible && button.Command == pc.ApplyCommand);
             var applyPosition = applyButton.TransformToAncestor(window).Transform(new Point());
-            CheckPc(applyPosition.Y >= 0 && applyPosition.Y + applyButton.ActualHeight < window.ActualHeight - 100, "Aplicar selección permanece accesible en el tamaño mínimo de ventana");
+            CheckPc(FitsWindow(window, applyButton), "Aplicar selección permanece accesible en el tamaño mínimo de ventana");
             var summaryScroll = (ScrollViewer)window.FindName("SummaryScroll");
             summaryScroll.ScrollToEnd(); window.UpdateLayout();
             if (!FitsWindow(window, applyButton) || applyButton.TransformToAncestor(window).Transform(new Point()).Y != applyPosition.Y)
@@ -1152,6 +1154,7 @@ internal static partial class InteractionSmokeChecks
             var actionError = Visuals<SummaryErrorNotice>(window).FirstOrDefault(panel => panel.IsVisible && panel.Message == pc.Status);
             CheckPc(actionError is not null && ReferenceEquals(actionError.Resources["ErrorText"], Application.Current.Resources["Text"]), "Un fallo al aplicar usa el mismo aviso neutral de Resumen, con rótulo Error");
             await RenderFixtureWindowAsync(window, Path.Combine(directory, "resumen-error-aplicacion.png"));
+            model.CloseOptimizationDialogCommand.Execute(null);
             model.SelectedPage = 3;
             await RenderFixtureWindowAsync(window, Path.Combine(directory, "pc-ajustes-minimo.png"));
             CheckPc(!Visuals<Button>(window).Any(button => button.IsVisible && (button.Command == pc.ApplyCommand || button.Command == pc.PrepareCommand)), "Ajustes conserva controles individuales sin duplicar el flujo principal de Resumen");
@@ -1185,6 +1188,8 @@ internal static partial class InteractionSmokeChecks
             var progressBar = Visuals<System.Windows.Controls.ProgressBar>(window).First(bar => bar.IsVisible && System.Windows.Automation.AutomationProperties.GetName(bar) == "Progreso de optimización del PC");
             var progressPosition = progressBar.TransformToAncestor(window).Transform(new Point());
             CheckPc(model.IsBusy && !pc.ApplyCommand.CanExecute(null) && progressPosition.Y + progressBar.ActualHeight < window.ActualHeight - 100, "Preparar muestra progreso visible y bloquea aplicar mientras se consultan los ajustes");
+            if (!Visuals<Button>((DependencyObject)window.FindName("OptimizationDialog")).Any(button => button.IsVisible && button.IsEnabled && button.Command == model.CancelCommand)) throw new InvalidOperationException("La cancelación debe estar dentro del ciclo de teclado del diálogo durante la preparación.");
+            checks.Add("Diálogo de optimización conserva Cancelar accesible dentro de su ciclo de teclado durante el trabajo");
             model.CancelCommand.Execute(null);
             await native.InspectionCancelled.Task;
             native.ReleaseInspection.TrySetResult();

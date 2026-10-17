@@ -54,6 +54,7 @@ internal sealed class RibbonAnimator : IDisposable
         window.Unloaded += OnUnloaded;
         model.PropertyChanged += OnModelChanged;
         model.Bloom.PropertyChanged += OnBloomChanged;
+        model.Activity.PropertyChanged += OnActivityChanged;
         SystemParameters.StaticPropertyChanged += OnPreferencesChanged;
         ApplyFrame(offset);
     }
@@ -64,6 +65,8 @@ internal sealed class RibbonAnimator : IDisposable
     internal double LastRenderMilliseconds { get; private set; }
     internal double MaximumRenderMilliseconds { get; private set; }
     private bool ReducedMotion => !SystemParameters.ClientAreaAnimation || (RenderCapability.Tier >> 16) == 0;
+    private bool ForegroundWorking => model.ShowStartupLoading || model.Activity.IsWorking;
+    private void OnActivityChanged(object? sender, PropertyChangedEventArgs e) { ApplyFrame(ElapsedSeconds); RefreshPolicy(); }
 
     internal void CaptureAt(double seconds)
     {
@@ -106,7 +109,7 @@ internal sealed class RibbonAnimator : IDisposable
     private void OnSizeChanged(object sender, SizeChangedEventArgs e) => ApplyFrame(ElapsedSeconds);
     private void OnModelChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (string.IsNullOrEmpty(e.PropertyName) || e.PropertyName is nameof(MainViewModel.IsBusy) or nameof(MainViewModel.IsScanning)) RefreshPolicy();
+        if (string.IsNullOrEmpty(e.PropertyName) || e.PropertyName is nameof(MainViewModel.IsBusy) or nameof(MainViewModel.IsScanning) or nameof(MainViewModel.ShowStartupLoading)) { ApplyFrame(ElapsedSeconds); RefreshPolicy(); }
     }
     private void OnBloomChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -146,7 +149,8 @@ internal sealed class RibbonAnimator : IDisposable
         artwork.Visibility = Visibility.Visible;
         var frame = RibbonMotionTimeline.Evaluate(ElapsedSeconds);
         var canRun = RibbonMotionTimeline.CanRun(loaded, window.IsVisible, window.IsActive,
-            window.WindowState == WindowState.Minimized, false, false, false, model.IsBusy, frame.IntroComplete);
+            window.WindowState == WindowState.Minimized, false, false, false, model.IsBusy && !ForegroundWorking, frame.IntroComplete);
+        if (model.Activity.IsVisible && !model.Activity.IsWorking) canRun = false;
         if (canRun && !attached)
         {
             lastFrame = double.NegativeInfinity;
@@ -166,7 +170,7 @@ internal sealed class RibbonAnimator : IDisposable
         if (seconds - lastFrame < interval) return;
         lastFrame = seconds;
         ApplyFrame(seconds);
-        if (complete && model.IsBusy) RefreshPolicy();
+        if (complete && model.IsBusy && !ForegroundWorking) RefreshPolicy();
     }
 
     private void ApplyFrame(double seconds)
@@ -174,6 +178,26 @@ internal sealed class RibbonAnimator : IDisposable
         if (disposed) return;
         var frame = RibbonMotionTimeline.Evaluate(seconds);
         var began = Stopwatch.GetTimestamp();
+        if (model.ShowStartupLoading || model.Activity.IsVisible)
+        {
+            var startup = model.ShowStartupLoading;
+            artwork.Width = startup ? 320 : 112; artwork.Height = startup ? 230 : 100;
+            artwork.HorizontalAlignment = startup ? HorizontalAlignment.Center : HorizontalAlignment.Right;
+            artwork.VerticalAlignment = startup ? VerticalAlignment.Center : VerticalAlignment.Bottom;
+            artwork.Margin = startup ? new Thickness(0, 0, 0, 180) : new Thickness(0, 0, 24, 146);
+            System.Windows.Controls.Panel.SetZIndex(artwork, 20);
+            artwork.RenderFrame(ReducedMotion || !ForegroundWorking ? 0 : seconds / 3.6);
+            blur.Radius = 0; artwork.Opacity = 1; veil.Opacity = 0;
+            scale.ScaleX = scale.ScaleY = 1; translation.X = 0;
+            translation.Y = ReducedMotion || !ForegroundWorking ? 0 : 8 * Math.Sin(seconds * Math.Tau / 3.6);
+            content.Opacity = 1; content.IsHitTestVisible = !startup;
+            RenderedFrames++; LastRenderMilliseconds = Stopwatch.GetElapsedTime(began).TotalMilliseconds;
+            MaximumRenderMilliseconds = Math.Max(MaximumRenderMilliseconds, LastRenderMilliseconds);
+            return;
+        }
+        artwork.Width = artwork.Height = double.NaN;
+        artwork.HorizontalAlignment = HorizontalAlignment.Stretch; artwork.VerticalAlignment = VerticalAlignment.Stretch;
+        artwork.Margin = new Thickness(0); System.Windows.Controls.Panel.SetZIndex(artwork, 0);
         var state = model.IsScanning ? BloomState.Analyzing : model.Bloom.State;
         var pose = state switch { BloomState.Analyzing => .14, BloomState.Thinking => .32, BloomState.Success => .0, BloomState.Warning => .56, BloomState.Error => .72, _ => .0 };
         var phase = !captureMode && model.IsBusy ? pose : frame.Phase / Math.Tau + (!captureMode ? pose : 0);
@@ -217,6 +241,7 @@ internal sealed class RibbonAnimator : IDisposable
         window.Unloaded -= OnUnloaded;
         model.PropertyChanged -= OnModelChanged;
         model.Bloom.PropertyChanged -= OnBloomChanged;
+        model.Activity.PropertyChanged -= OnActivityChanged;
         SystemParameters.StaticPropertyChanged -= OnPreferencesChanged;
         content.Opacity = 1;
         content.IsHitTestVisible = true;

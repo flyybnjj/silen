@@ -10,7 +10,7 @@ using Microsoft.Win32;
 
 namespace Silen.App;
 
-public sealed class MainViewModel : ObservableObject, IDisposable
+public sealed partial class MainViewModel : ObservableObject, IDisposable
 {
     private readonly ReportStore store;
     private readonly ViewModelServices services;
@@ -77,6 +77,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         Settings = new(services.CreatePreferences(), applicationTimer, RunBusyAsync, () => CanStartOperation, services.ApplyTheme);
         Settings.PropertyChanged += (_, change) =>
         {
+            if (string.IsNullOrEmpty(change.PropertyName) || change.PropertyName == nameof(Settings.ShowManual))
+            {
+                if (Settings.ShowManual) { pcDialogOpen = false; Activity.Dismiss(); }
+                Changed(nameof(IsOptimizationDialogOpen)); Changed(nameof(IsManualDialogOpen)); Changed(nameof(IsPcDialogOpen)); Changed(nameof(OptimizationDialogTitle));
+            }
             if ((string.IsNullOrEmpty(change.PropertyName) || change.PropertyName == nameof(Settings.Status)) && !string.IsNullOrEmpty(Settings.Status))
                 Status = Settings.Status;
             if ((string.IsNullOrEmpty(change.PropertyName) || change.PropertyName == nameof(Settings.ShowManual)) && Settings.ShowManual)
@@ -110,6 +115,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         Bloom.PropertyChanged += (_, change) => { if (change.PropertyName == nameof(Bloom.Status)) Status = Bloom.Status; };
         PcOptimization = new(services.CreatePcOptimization(nativeTools), RunAfterDiagnosticAsync, () => CanApplyChanges, services.ConfirmPcOptimization, Tools.RefreshStateAsync, Recovery, services.CreateInstalledProducts(), services.ChooseGameExecutable, applicationTimer);
         PcOptimization.ChangesApplied += Restart.Register;
+        PcOptimization.DialogRequested += OpenPcDialog;
+        PcOptimization.ActivityResult += Activity.DetailResult;
         PcOptimization.PartialChangesApplied += Restart.RegisterPartial;
         PcOptimization.PropertyChanged += (_, change) => { if (change.PropertyName == nameof(PcOptimization.Status) && PcOptimization.HasStatus) Status = PcOptimization.Status; };
         Fortnite = new(services.CreateFortniteProfile(), RunBusyAsync, () => CanStartOperation, Tools.RefreshStateAsync, services.ChooseFortniteFolder, services.ConfirmOptimization);
@@ -118,6 +125,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (change.PropertyName == nameof(Tools.Status)) Status = Tools.Status;
             else if (change.PropertyName == nameof(Tools.CleanupStatus)) Status = Tools.CleanupStatus;
+        };
+        Tools.ActivityProgress += Activity.Report;
+        Tools.ActivityResult += Activity.DetailResult;
+        PcOptimization.PropertyChanged += (_, change) =>
+        {
+            if (change.PropertyName is null or nameof(PcOptimization.ProgressTitle))
+                if (PcOptimization.IsOptimizing) Activity.Report(PcOptimization.IsPreparing ? "Estoy preparando las opciones. Todavía no cambio Windows." : "Estoy aplicando el ajuste confirmado.", PcOptimization.ProgressTitle);
         };
         RefreshCollectorState();
         DriversView = CollectionViewSource.GetDefaultView(Drivers);
@@ -147,6 +161,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         NavigateCommand = new RelayCommand(parameter => { if (int.TryParse(parameter?.ToString(), out var index) && index is >= 0 and <= 5) SelectedPage = index; });
         OpenFortniteCommand = Command(_ => OpenFortniteAsync(), _ => CanStartOperation);
         ClearErrorCommand = new RelayCommand(_ => Error = "");
+        CloseOptimizationDialogCommand = new RelayCommand(_ => CloseOptimizationDialog(), _ => CanStartOperation);
+        DismissActivityCommand = new RelayCommand(_ => Activity.Dismiss(), _ => !IsBusy);
     }
 
     public ICommand ScanCommand { get; }
@@ -394,6 +410,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public async Task InitializeAsync(bool autoScan = false)
     {
+        initializing = true;
+        try { await InitializeCoreAsync(autoScan); }
+        finally { initializing = false; EndStartupPresentation(); }
+    }
+
+    private async Task InitializeCoreAsync(bool autoScan)
+    {
         using var initialization = StartupDiagnostics.Measure("InitializeAsync");
         using (StartupDiagnostics.Measure("PreferencesAndHistory"))
             await RunBusyAsync("Preparando Silen…", async token => { await Settings.LoadAsync(token); if (!autoScan) await RefreshHistoryAsync(); Status = "Preparando la información de tu equipo…"; });
@@ -438,7 +461,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             }
             catch (OperationCanceledException) { Status = "Análisis cancelado. Los datos parciales se descartaron." + (HasSnapshot ? " Se muestra el último análisis guardado." : ""); throw; }
             catch { Status = "Análisis incompleto. Los datos parciales se descartaron." + (HasSnapshot ? " Se muestra el último análisis guardado." : ""); throw; }
-            finally { IsScanning = false; scanGeneration++; liveSamples.Clear(); scanMachine = null; scanDrives = null; Changed(null); }
+            finally { EndStartupPresentation(); IsScanning = false; scanGeneration++; liveSamples.Clear(); scanMachine = null; scanDrives = null; Changed(null); }
         });
         if (completed && !IsClosing)
         {
@@ -457,6 +480,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (value.Machine is not null) scanMachine = value.Machine;
         if (value.Drives is not null) scanDrives = value.Drives;
         if (value.Sample is not null) liveSamples.Add(value.Sample);
+        if (value.Machine is not null && value.CompletedSteps >= 1) startupIdentityRead = true;
+        if (startupIdentityRead && liveSamples.Count > 0) EndStartupPresentation();
         Changed(null);
     }
 
@@ -464,6 +489,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         if (isCurrent && result.WindowsUpdate is { } updateHealth) WindowsUpdate.SetHealth(updateHealth);
         snapshot = result;
+        EndStartupPresentation();
         snapshotIsCurrent = isCurrent;
         Findings = RecommendationEngine.Analyze(result).OrderByDescending(f => f.Severity).Select(f => new FindingRow(f)).ToList();
         Drivers.Clear();
@@ -488,10 +514,26 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         if (!CanStartOperation) return false;
         IsBusy = true; Error = ""; Status = message;
-        try { await lifetime.RunAsync(work); return true; }
-        catch (OperationCanceledException) { if (!Status.StartsWith("Análisis cancelado", StringComparison.Ordinal)) Status = "Operación cancelada. Puedes volver a intentarlo."; return false; }
+        var present = !initializing;
+        if (present) Activity.Begin(message);
+        var completed = false; var cancelled = false;
+        try
+        {
+            await lifetime.RunAsync(async token => { try { await work(token); } finally { cancelled = token.IsCancellationRequested; } });
+            completed = true; return true;
+        }
+        catch (OperationCanceledException) { cancelled = true; if (!Status.StartsWith("Análisis cancelado", StringComparison.Ordinal)) Status = "Operación cancelada. Puedes volver a intentarlo."; return false; }
         catch (Exception ex) { Error = ex.Message; if (!Status.StartsWith("Análisis incompleto", StringComparison.Ordinal)) Status = "La operación no se completó. Revisa el detalle."; return false; }
-        finally { IsBusy = false; }
+        finally
+        {
+            if (present)
+            {
+                Activity.Finish(completed && string.IsNullOrWhiteSpace(Error), cancelled);
+                // Las opciones quedan a la vista; el mensaje de preparación no las tapa.
+                if (message == "Preparando ajustes del PC…" && completed && !PcOptimization.HasActionError) Activity.Dismiss();
+            }
+            IsBusy = false;
+        }
     }
 
     private Task<bool> RunAfterDiagnosticAsync(string message, Func<CancellationToken, Task> work) =>

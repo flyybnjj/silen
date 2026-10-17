@@ -216,12 +216,18 @@ La detección comienza al abrir. Sin datos se muestra una explicación breve; si
 falla, Reintentar. No repetir Analizar en todas las vistas. Conservar orden de
 lectura y teclado al adaptar cada tarea.
 
-El contenido permanece visible e interactivo desde el primer fotograma; la
-introducción de Bloom no retrasa su lectura. El velo de legibilidad está presente
-desde el inicio. Publicar modelo, CPU y capacidad de RAM de fuentes locales antes
-de WMI; completar unidades y GPU al recibirlas. Esta vista previa no es un informe
-terminado, no reutiliza porcentajes guardados ni habilita Aplicar. El historial
-no debe bloquear la primera detección del equipo.
+Al abrir, Bloom ocupa la carga hasta recibir la identidad enriquecida del equipo
+(marca, modelo y tipo), CPU, RAM y la primera muestra de sensores. Una temperatura
+inaccesible se muestra como «No disponible»; no se espera indefinidamente un sensor.
+Entonces aparece Resumen y continúa la observación de diez muestras. Los datos
+parciales no habilitan Aplicar ni se presentan como promedios terminados. Un fallo
+o cancelación retira la carga y permite reintentar. El historial no bloquea esta
+primera lectura. No introducir una demora artificial para completar la animación.
+
+Optimizar PC y el manual experto abren un diálogo de selección con un único Aplicar,
+fuera del desplazamiento. El fondo queda inactivo; Cerrar no aplica cambios. Durante
+el trabajo se conserva Cancelar dentro del ciclo de teclado; Escape solicita cancelar.
+Versión, actualizaciones y su error solo se muestran en Ajustes.
 
 ## Elevation & Depth
 
@@ -270,12 +276,20 @@ No inventar puntuaciones.
 No disponible permanece explícito; un promedio terminado no se llama lectura en vivo.
 
 **BLOOM.** Preservar silueta, lámina posterior, pliegue frontal y lóbulo derecho.
-Introducción de 1,8 s; ambiente de 8 s, aleteo de 4 s y 24 fps. Pausar al ocultar,
-minimizar, desactivar, trabajar o cerrar. Reducir movimiento usa reposo; alto
+Ambiente de 8 s y aleteo de 4 s, con cadencia de 24 fps. La carga y las operaciones
+usan la misma malla en primer plano, nítida, con ciclo de 3,6 s y desplazamiento
+vertical de hasta 8 unidades. No se crea una segunda malla. Pausar al ocultar,
+minimizar, desactivar o cerrar; el trabajo activo mantiene este aleteo informativo. Reducir movimiento usa reposo; alto
 contraste oculta la ilustración. Estados: reposo, análisis, espera, éxito, atención, error.
 
-**Regla de presencia secundaria.** BLOOM nunca compite con la acción principal:
-texto, foco, progreso y botones deben seguir siendo el primer plano legible.
+**Regla de presencia secundaria.** Dentro de las vistas, BLOOM no compite con la acción principal:
+texto, foco, progreso y botones deben seguir siendo el primer plano legible. La
+pantalla de carga es la excepción: Bloom presenta la espera antes del equipo. En
+operaciones, una burbuja local informa el paso real, recuentos y ubicación legible
+(por ejemplo, «Temporales de tu usuario»), sin rutas personales ni llamadas a IA.
+No tapa Aplicar y distingue recuperación de espacio liberado. La preparación
+retira la burbuja al terminar para dejar leer las opciones; los resultados de
+cambios permanecen hasta «Entendido».
 No añadir destellos, cambios de escala, saturación o movimiento para reclamar
 atención. Comprobar la pose más visible y el movimiento, no solo una captura
 favorable. Si reduce legibilidad o distrae, atenuar su presencia o pausar la
@@ -332,7 +346,7 @@ Aplicar este checklist a cada vista individual. Marcar solo lo probado con
 evidencia; si un estado no corresponde a su tarea, registrar «No aplica» y el
 motivo. No heredar la aprobación de Resumen ni marcar funciones propuestas.
 
-- [ ] Carga: indicar qué ocurre; conservar progreso y cancelación cuando existan. En Resumen, publicar identidad, capacidad de RAM y unidades al obtenerlas. El panel «Analizando tu equipo» concentra el paso y la única barra de diagnóstico (ink sobre line); el pie no repite el estado. Bajo el equipo, «Midiendo… n/10 muestras»; las métricas pendientes usan un guion pequeño y las lecturas parciales muted. Las trazas aparecen desde cinco muestras conservando su espacio. Los promedios ink y hallazgos solo corresponden al diagnóstico terminado; memoria media superior al 90 % recibe contexto literal al terminar, nunca durante la medición. Optimizar PC y Aplicar esperan al diagnóstico completo actual, con «Disponible al terminar el análisis» visible; cancelar o fallar descarta parciales. Si se conserva un resultado anterior, identificarlo como último análisis guardado y mantener Aplicar bloqueado hasta una nueva detección completa.
+- [ ] Carga: indicar qué ocurre; conservar progreso y cancelación cuando existan. En el arranque, Bloom espera identidad enriquecida y primera muestra; después Resumen publica lecturas parciales y unidades al obtenerlas. No espera un sensor inaccesible. El panel «Analizando tu equipo» concentra el paso y la única barra de diagnóstico (ink sobre line); el pie no repite el estado. Bajo el equipo, «Midiendo… n/10 muestras»; las métricas pendientes usan un guion pequeño y las lecturas parciales muted. Las trazas aparecen desde cinco muestras conservando su espacio. Los promedios ink y hallazgos solo corresponden al diagnóstico terminado; memoria media superior al 90 % recibe contexto literal al terminar, nunca durante la medición. Optimizar PC y Aplicar esperan al diagnóstico completo actual, con «Disponible al terminar el análisis» visible; cancelar o fallar descarta parciales. Si se conserva un resultado anterior, identificarlo como último análisis guardado y mantener Aplicar bloqueado hasta una nueva detección completa.
 - [ ] Vacío: explicar por qué faltan datos y qué puede hacer el usuario, sin cifras ficticias.
 - [ ] Error: problema concreto, recuperación disponible y distinción de la acción principal.
 - [ ] Selección: contadores 0/1/varios correctos, disponibilidad y efectos visibles; preparar no aplica.
@@ -342,7 +356,7 @@ motivo. No heredar la aprobación de Resumen ni marcar funciones propuestas.
 - [ ] 1240×820 y 1000×680: acción principal completa, orden estable, wrapping y desplazamiento comprensibles.
 - [ ] Teclado: foco visible, orden lógico, acceso a controles y detalles completos sin depender de hover.
 - [ ] Contenido extremo: nombres largos, datos no disponibles y textos de estado extensos sin pérdida de información.
-- [ ] Movimiento: BLOOM en segundo plano; comprobar pausa y reducir movimiento cuando correspondan.
+- [ ] Movimiento: comprobar Bloom en carga, operación y ambiente; pausa, reducir movimiento y cierre cuando correspondan.
 - [ ] Alcance: controles conectados, sin regresiones ni cambios no autorizados en otras vistas.
 
 Cerrar cada vista con capturas de los tamaños y temas probados, resultado de las
@@ -369,7 +383,7 @@ documentar una regla no acredita que esté activa ni que haya sido probada en UI
 
 | Área | Estado en la fecha de revisión |
 | --- | --- |
-| Primera información al abrir | Revisión 0889f1e: previa local de modelo/CPU/RAM antes de WMI; historial después del diagnóstico. Contenido visible desde el primer fotograma, velo de legibilidad desde el inicio y mascota conservada. Tres arranques normales: previa visible 1,184 [1,151–1,212] s; básicos con unidades 1,285 [1,259–1,314] s frente a 1,920 [1,919–1,968] s. No equivale a arranque completo ni habilita Aplicar. 673 unitarias, una OEM omitida, 259 comprobaciones WPF de fuentes y portable. Evidencia en `docs/inicio-inmediato-2026-10-17.md`. |
+| Primera información al abrir | Flujo vigente desde 2026-10-17: Bloom espera identidad enriquecida y primera muestra; después se revela Resumen sin habilitar Aplicar hasta el diagnóstico completo. Sensores ausentes explícitos. Sustituye la presentación inmediata de 0889f1e; sus mediciones históricas no describen esta nueva presentación. Evidencia en `docs/bloom-flujos-2026-10-17.md`. |
 | Identidad y tokens | Source Serif 4, Lino, variantes claras/oscuras y brick están en los recursos. Los nombres WPF conservan los alias indicados abajo. |
 | Selección | Casillas, navegación y listas verificadas en XAML. Las filas de tabla conservan una marca lateral de 1 unidad al perder foco, además del relleno neutro; comprobadas mediante render WPF en claro, oscuro y alto contraste simulado. En alto contraste la marca usa Highlight del sistema. El relleno nunca es su único indicador. Revisión manual en alto contraste real pendiente. |
 | Resumen | Composición refinada y referencia de jerarquía. El PR 1 de datos tempranos publica identidad, capacidad de RAM y unidades durante la carga; «Midiendo… n/10» distingue las trazas parciales. Optimizar PC y Aplicar selección principal/manual esperan al diagnóstico completo actual. Cancelación y fallo descartan parciales; un análisis anterior se identifica literalmente y no habilita Aplicar. Verificación automatizada y capturas WPF; no equivale a recorrido manual. |
@@ -477,7 +491,7 @@ EXE normal y datos simulados; no atribuir tiempos del host al portable.
 
 ### Información inmediata al entrar · 2026-10-17
 
-Evidencia: `docs/inicio-inmediato-2026-10-17.md`; revisión de código 0889f1e.
+Evidencia histórica: `docs/inicio-inmediato-2026-10-17.md`; revisión 0889f1e. La regla de contenido visible desde el primer fotograma queda sustituida por «Carga y operaciones con Bloom», al final de esta sección, por petición del usuario.
 
 - [x] Vista previa local de modelo/CPU/RAM anterior a WMI e historial, sin datos de uso guardados ni puntuaciones.
 - [x] Contenido visible/interactivo en el primer fotograma y velo de legibilidad presente; Bloom mantiene movimiento y pausas.
@@ -528,3 +542,19 @@ servicios simulados, claves ficticias y ninguna llamada a un proveedor de IA.
 El ensayo de Recuperación en VM queda fuera de esta tarea por decisión del usuario;
 su ausencia sigue registrada como límite de la evidencia, sin bloquear esta entrega.
 
+
+
+### Carga y operaciones con Bloom · 2026-10-17
+
+Evidencia: `docs/bloom-flujos-2026-10-17.md`. Sustituye la regla de entrada inmediata
+anterior. La animación acompaña trabajo real; no garantiza una mejora del PC.
+
+- [x] Carga: identidad enriquecida y primera muestra antes de revelar Resumen; sensores ausentes explícitos y Aplicar bloqueado hasta finalizar el diagnóstico.
+- [x] Error y cancelación de inicio: la carga se retira y se ofrece reintentar; sin cifras parciales definitivas.
+- [x] Selección: manual experto y Optimizar PC en diálogos excluyentes, un Aplicar por selección; preparación y cierre no modifican Windows.
+- [x] Operaciones: recuentos de limpieza reales y coalescidos; no hay una publicación por archivo en el despachador. Resultados cancelados, fallidos o inciertos no anuncian éxito genérico.
+- [x] Teclado estructural: ciclo de Tab dentro del diálogo y Cancelar en ese ciclo durante el trabajo; Escape solicita cancelar y Cerrar espera a que termine.
+- [x] Actualizaciones de la app: versión, consulta y error solo en Ajustes, accesibles en modo normal.
+- [ ] Recorrido manual completo con teclado, lector de pantalla, hover/foco y alto contraste real: no realizado.
+- [ ] Reducir movimiento de Windows, DPI y fluidez de producción: requieren verificación manual; no se acreditan con capturas estáticas.
+- [ ] Cambios reales, recuperación real o reinicio: no ejecutados en este equipo para verificar la interfaz.

@@ -22,7 +22,7 @@ public sealed class ApplicationSettingsViewModel : ObservableObject
         this.applyTheme = applyTheme ?? (_ => { });
         ApplyThemeCommand = new AsyncCommand(_ => ApplyThemeAsync(), _ => canRun(), ex => { status = ex.Message; Changed(null); });
         ToggleExpertCommand = new AsyncCommand(_ => ToggleExpertAsync(), _ => canRun(), ex => { status = ex.Message; Changed(null); });
-        OpenManualCommand = new RelayCommand(_ => { manual = !manual; Changed(null); }, _ => canRun() && expert);
+        OpenManualCommand = new RelayCommand(_ => { manual = true; Changed(null); }, _ => canRun() && expert);
         DisableTimerCommand = new AsyncCommand(parameter => DisableTimerAsync(parameter?.ToString()), parameter => canRun() && parameter is string path && timers.IsEnabled(path), ex => { status = ex.Message; Changed(null); });
     }
     public bool ExpertMode => expert;
@@ -30,6 +30,7 @@ public sealed class ApplicationSettingsViewModel : ObservableObject
     public string SelectedTheme { get => theme; set { if (Themes.Contains(value)) Set(ref theme, value); } }
     public ICommand ApplyThemeCommand { get; }
     public bool ShowManual => expert && manual;
+    internal void CloseManual() { manual = false; Changed(null); }
     public string Status => status;
     public string TimerStatus => timers.Status;
     public bool HasTimers => TimerProfiles.Count > 0;
