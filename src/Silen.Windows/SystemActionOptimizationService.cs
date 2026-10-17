@@ -51,6 +51,7 @@ public sealed class SystemActionOptimizationService : INativeOptimizationService
     public Task<OptimizationOutcome> SetStartupEnabledAsync(string id, bool enabled, CancellationToken cancellationToken = default) => Local.SetStartupEnabledAsync(id, enabled, cancellationToken);
     public Task<TemporaryCleanupPreview> PreviewTempAsync(CancellationToken cancellationToken = default) => Local.PreviewTempAsync(cancellationToken);
     public Task<TemporaryCleanupResult> CleanTempAsync(IReadOnlyCollection<string> ids, CancellationToken cancellationToken = default) => Local.CleanTempAsync(ids, cancellationToken);
+    public Task<TemporaryCleanupResult> CleanTempAsync(IReadOnlyCollection<string> ids, IProgress<TemporaryCleanupProgress>? progress, CancellationToken cancellationToken = default) => Local.CleanTempAsync(ids, progress, cancellationToken);
     public Task<IReadOnlyList<CleanupRecoveryItem>> ListRecoveryAsync(CancellationToken cancellationToken = default) => Local.ListRecoveryAsync(cancellationToken);
     public Task<TemporaryCleanupResult> RestoreRecoveryAsync(IReadOnlyCollection<string> ids, CancellationToken cancellationToken = default) => Local.RestoreRecoveryAsync(ids, cancellationToken);
     public Task<TemporaryCleanupResult> PurgeRecoveryAsync(IReadOnlyCollection<string> ids, CancellationToken cancellationToken = default) => Local.PurgeRecoveryAsync(ids, cancellationToken);

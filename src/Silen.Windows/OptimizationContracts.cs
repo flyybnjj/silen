@@ -18,6 +18,8 @@ public sealed record OptimizationOutcome(bool Success, string Message, bool Chan
 public sealed record TemporaryFileItem(string Id, string RelativePath, long Bytes);
 public sealed record TemporaryCleanupPreview(List<TemporaryFileItem> Files, long TotalBytes, bool Truncated, string Message);
 public sealed record TemporaryCleanupResult(int Removed, int Skipped, long BytesFreed, string Message, long RecoverableBytes = 0, string? RecoveryId = null);
+// Processed cuenta intentos reales; al cancelar, Skipped también incluye los pendientes conservados.
+public sealed record TemporaryCleanupProgress(int Processed, int Total, int Removed, int Skipped, long RecoverableBytes, string Location);
 public sealed record CleanupRecoveryItem(string Id, string RelativePath, long Bytes, DateTimeOffset CapturedAt);
 
 public interface INativeOptimizationService
@@ -34,6 +36,7 @@ public interface INativeOptimizationService
     Task<OptimizationOutcome> UndoAsync(string changeId, CancellationToken cancellationToken = default);
     Task<TemporaryCleanupPreview> PreviewTempAsync(CancellationToken cancellationToken = default);
     Task<TemporaryCleanupResult> CleanTempAsync(IReadOnlyCollection<string> ids, CancellationToken cancellationToken = default);
+    Task<TemporaryCleanupResult> CleanTempAsync(IReadOnlyCollection<string> ids, IProgress<TemporaryCleanupProgress>? progress, CancellationToken cancellationToken = default) => CleanTempAsync(ids, cancellationToken);
     Task<IReadOnlyList<CleanupRecoveryItem>> ListRecoveryAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<CleanupRecoveryItem>>([]);
     Task<TemporaryCleanupResult> RestoreRecoveryAsync(IReadOnlyCollection<string> ids, CancellationToken cancellationToken = default) => Task.FromResult(new TemporaryCleanupResult(0, ids.Count, 0, "Recuperación de temporales no disponible."));
     Task<TemporaryCleanupResult> PurgeRecoveryAsync(IReadOnlyCollection<string> ids, CancellationToken cancellationToken = default) => Task.FromResult(new TemporaryCleanupResult(0, ids.Count, 0, "Purga de temporales no disponible."));

@@ -421,6 +421,7 @@ public sealed partial class NativeOptimizationService : INativeOptimizationServi
         ? "Windows denegó el acceso. No se pudo completar la preferencia." : ex.Message;
     public Task<TemporaryCleanupPreview> PreviewTempAsync(CancellationToken cancellationToken = default) => cleanup.PreviewAsync(cancellationToken);
     public Task<TemporaryCleanupResult> CleanTempAsync(IReadOnlyCollection<string> ids, CancellationToken cancellationToken = default) => cleanup.CleanAsync(ids, cancellationToken);
+    public Task<TemporaryCleanupResult> CleanTempAsync(IReadOnlyCollection<string> ids, IProgress<TemporaryCleanupProgress>? progress, CancellationToken cancellationToken = default) => cleanup.CleanAsync(ids, cancellationToken, progress);
     public Task<IReadOnlyList<CleanupRecoveryItem>> ListRecoveryAsync(CancellationToken cancellationToken = default) => cleanup.ListRecoveryAsync(cancellationToken);
     public Task<TemporaryCleanupResult> RestoreRecoveryAsync(IReadOnlyCollection<string> ids, CancellationToken cancellationToken = default) => cleanup.RestoreRecoveryAsync(ids, cancellationToken);
     public Task<TemporaryCleanupResult> PurgeRecoveryAsync(IReadOnlyCollection<string> ids, CancellationToken cancellationToken = default) => cleanup.PurgeRecoveryAsync(ids, cancellationToken);

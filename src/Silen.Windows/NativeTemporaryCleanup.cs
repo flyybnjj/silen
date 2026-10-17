@@ -77,7 +77,8 @@ internal sealed partial class NativeTemporaryCleanup
         finally { gate.Release(); }
     }, token);
 
-    internal Task<TemporaryCleanupResult> CleanAsync(IReadOnlyCollection<string> ids, CancellationToken token) => Task.Run(async () =>
+    internal Task<TemporaryCleanupResult> CleanAsync(IReadOnlyCollection<string> ids, CancellationToken token,
+        IProgress<TemporaryCleanupProgress>? progress = null) => Task.Run(async () =>
     {
         ArgumentNullException.ThrowIfNull(ids);
         token.ThrowIfCancellationRequested();
@@ -87,21 +88,33 @@ internal sealed partial class NativeTemporaryCleanup
             var selected = ids.Distinct(StringComparer.Ordinal).ToArray();
             var removed = 0;
             var skipped = 0;
+            var processed = 0;
             long bytes = 0;
             var batch = Guid.NewGuid().ToString("N");
+            void Report()
+            {
+                try { progress?.Report(new(processed, selected.Length, removed, skipped, bytes, "Temporales de tu usuario")); }
+                catch (Exception) { } // Un observador no debe interrumpir el retiro ni ocultar su resultado recuperable.
+            }
+            TemporaryCleanupResult Cancelled(int index)
+            {
+                skipped += selected.Length - index;
+                Report();
+                return new TemporaryCleanupResult(removed, skipped, 0,
+                    "Limpieza cancelada. Los archivos ya retirados siguen disponibles en recuperación.", bytes, removed > 0 ? batch : null);
+            }
+            Report();
             for (var index = 0; index < selected.Length; index++)
             {
-                if (token.IsCancellationRequested)
-                    return new TemporaryCleanupResult(removed, skipped + selected.Length - index, 0,
-                        "Limpieza cancelada. Los archivos ya retirados siguen disponibles en recuperación.", bytes, removed > 0 ? batch : null);
+                if (token.IsCancellationRequested) return Cancelled(index);
                 var id = selected[index];
-                if (id is null || !preview.Remove(id, out var file)) { skipped++; continue; }
+                if (id is null || !preview.Remove(id, out var file)) { skipped++; processed++; Report(); continue; }
                 var now = clock();
-                if (token.IsCancellationRequested)
-                    return new TemporaryCleanupResult(removed, skipped + selected.Length - index, 0,
-                        "Limpieza cancelada. Los archivos ya retirados siguen disponibles en recuperación.", bytes, removed > 0 ? batch : null);
+                if (token.IsCancellationRequested) return Cancelled(index);
                 if (RetireValidated(file, now, id, batch)) { removed++; bytes = checked(bytes + file.Bytes); }
                 else skipped++;
+                processed++;
+                Report();
             }
             return new TemporaryCleanupResult(removed, skipped, 0,
                 $"{SpanishText.Form(removed, "Se retiró", "Se retiraron")} {SpanishText.Count(removed, "archivo", "archivos")} a recuperación y {SpanishText.Form(skipped, "se omitió", "se omitieron")} {skipped}. No se liberó espacio todavía; puedes restaurar el lote o revisar su purga definitiva.", bytes, removed > 0 ? batch : null);
