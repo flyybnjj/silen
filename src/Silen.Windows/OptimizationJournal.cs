@@ -106,8 +106,7 @@ internal sealed class OptimizationJournal
                 if (UntrustedLegacyEntries.Count > 0)
                 {
                     // Conserva una copia exacta antes de cualquier futura escritura del historial de usuario.
-                    var quarantine = Path.Combine(directory, "optimizations.legacy-untrusted.json");
-                    if (!File.Exists(quarantine)) File.Copy(path, quarantine, overwrite: false);
+                    await PreserveLegacyAsync(path, token);
                     entries.RemoveAll(entry => entry.Values.Any(IsMachineValue));
                 }
             }
@@ -116,6 +115,47 @@ internal sealed class OptimizationJournal
             return entries;
         }
         catch (JsonException ex) { throw new InvalidDataException("El respaldo de mejoras está dañado. Se conservó para recuperación.", ex); }
+    }
+
+    private async Task PreserveLegacyAsync(string path, CancellationToken token)
+    {
+        var source = await File.ReadAllBytesAsync(path, token);
+        var quarantine = Path.Combine(directory, "optimizations.legacy-untrusted.json");
+        if (File.Exists(quarantine))
+        {
+            if (await SameLegacyCopyAsync(quarantine, source, token)) return;
+            var digest = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(source));
+            quarantine = Path.Combine(directory, $"optimizations.legacy-untrusted-{digest}.json");
+            if (File.Exists(quarantine))
+            {
+                if (await SameLegacyCopyAsync(quarantine, source, token)) return;
+                throw new InvalidDataException("La copia del respaldo legado no coincide. Se conservaron los archivos; no se inició un cambio.");
+            }
+        }
+        // Una copia distinta nunca sobrescribe la anterior. Un fallo impide
+        // retirar las entradas legadas del siguiente historial de usuario.
+        var temporary = Path.Combine(directory, $".{Guid.NewGuid():N}.tmp");
+        try
+        {
+            await using (var copy = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
+            {
+                await copy.WriteAsync(source, token);
+                await copy.FlushAsync(token);
+                copy.Flush(flushToDisk: true);
+            }
+            token.ThrowIfCancellationRequested();
+            File.Move(temporary, quarantine, overwrite: false);
+        }
+        finally { if (File.Exists(temporary)) File.Delete(temporary); }
+    }
+
+    private static async Task<bool> SameLegacyCopyAsync(string path, byte[] source, CancellationToken token)
+    {
+        await using var copy = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        if (copy.Length != source.Length) return false;
+        var existing = new byte[source.Length];
+        await copy.ReadExactlyAsync(existing, token);
+        return existing.AsSpan().SequenceEqual(source);
     }
 
     private static void DemandRecordedNumber(RegistryValueState state, JsonElement serialized)
