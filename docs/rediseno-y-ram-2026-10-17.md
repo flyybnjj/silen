@@ -57,3 +57,36 @@ Evidencia: `artifacts/revision-uso-real-2026-10-17/`. No se aplican ajustes real
 La verificación de la rueda prueba el desplazamiento y sus límites, no la sensación
 subjetiva ni la fluidez GPU. Lector de pantalla, DPI, alto contraste real y recorrido
 humano completo quedan sin marcar. No se atribuye mejora de rendimiento del PC.
+
+
+## Entrega y prueba de producción
+
+Fuente del portable: `32b7be544c25cee0c12b11b8ce8f83e04166b6e6`.
+El ejecutable publicado pasa de nuevo **276 comprobaciones WPF**. La distribución
+está en `artifacts/Silen-win-x64/` y `artifacts/Silen-win-x64.zip`; la copia del
+escritorio conserva su ruta `Silen - preversion/Silen.exe`. Se compararon SHA-256 de
+los 33 archivos. La anterior se conserva en `Silen - preversion anterior
+20261017-rediseno-32b7be5`.
+
+La preferencia de este usuario se cambió a Oscuro por su elección explícita; el modo
+experto se conservó y la preferencia anterior tiene copia `user-preferences.json.antes-grafito-32b7be5.bak`.
+Las preferencias guardadas de otros usuarios conservan su tema. No se cambian ajustes
+de Windows para probar la interfaz.
+
+Tres arranques normales de esa copia del escritorio, sin pulsar Actualizar, mediante
+`scripts/measure-startup.ps1`. Los tres terminaron correctamente, con RAM nativa
+disponible, **15 procesos de memoria** y diez muestras. Evidencia en
+`arranque-real/trial-{1,2,3}/startup.json`, campos `AutomaticMemoryAvailable` y
+`AutomaticMemoryProcessCount` (solo booleano/recuento, sin nombres ni rutas).
+
+| Hito | Mediana (s) | Rango (s) |
+|---|---:|---:|
+| Ventana principal y datos listos para layout | 2.735 | 2.710–2.740 |
+| Diagnóstico completo | 11.826 | 11.821–11.869 |
+| Todas las tareas iniciales incluidas consultas externas | 15.198 | 15.062–27.126 |
+
+El splash se muestra antes de construir la ventana principal. Por eso WindowShown,
+Identity y RamCapacity de esta instrumentación se registran ahora después de la
+espera elegida; no compararlos con la entrada anterior como si midieran lo mismo.
+El hito visible exige layout, no acredita presentación GPU exacta. Las consultas
+externas continúan tras mostrar los datos. No se afirma mejora de rendimiento del PC.

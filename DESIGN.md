@@ -579,3 +579,6 @@ Evidencia y límites en `docs/rediseno-y-ram-2026-10-17.md`.
 - [x] Casos automáticos de RAM, errores por fuente, cancelación, semáforo, transparencia, poses distintas, filtros y rueda nativa.
 - [x] Capturas de las seis vistas en ambos temas y tamaños, con servicios simulados para acciones del sistema.
 - [ ] Recorrido humano completo de teclado/lector de pantalla, DPI, alto contraste y sensación de desplazamiento: no acreditados por estas pruebas.
+
+- [x] Distribución final: 694 unitarias (una OEM opcional omitida), 276 comprobaciones WPF también en el portable; 33 archivos del escritorio coinciden por SHA-256.
+- [x] Tres arranques normales del ejecutable entregado: RAM disponible automáticamente y 15 procesos en los tres, sin pulsar Actualizar. Datos listos para layout 2,735 [2,710–2,740] s; diagnóstico completo 11,826 [11,821–11,869] s. No acredita GPU ni promete estos tiempos en otros equipos.
