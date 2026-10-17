@@ -24,7 +24,7 @@ public sealed partial class ToolsViewModel
     private void InitializeManual(Func<string, string, bool> confirm)
     {
         confirmManual = confirm;
-        ApplyManualCommand = Command(_ => ApplyManualAsync(), _ => HasPendingManual);
+        ApplyManualCommand = Command(_ => ApplyManualAsync(), _ => CanApplySelection() && HasPendingManual);
         RemoveManualCommand = new RelayCommand(parameter => { if (parameter is ManualChange item) PendingManual.Remove(item); Changed(null); }, _ => canRun());
         LoadSystemBackupsCommand = Command(_ => LoadSystemBackupsAsync(), _ => service is SystemActionOptimizationService);
     }
@@ -38,7 +38,7 @@ public sealed partial class ToolsViewModel
     internal async Task<bool> ApplyManualAsync()
     {
         var selection = PendingManual.ToArray();
-        if (!canRun() || selection.Length == 0 || !confirmManual("Aplicar selección manual", string.Join("\n\n", selection.Select(item => item.Title + ": " + item.Detail)))) return false;
+        if (!CanApplySelection() || selection.Length == 0 || !confirmManual("Aplicar selección manual", string.Join("\n\n", selection.Select(item => item.Title + ": " + item.Detail)))) return false;
         return await run("Aplicando selección manual…", async token =>
         {
             var applied = new List<string>(); var partial = new List<string>(); var messages = new List<string>(); var failed = 0; var cancelled = false;

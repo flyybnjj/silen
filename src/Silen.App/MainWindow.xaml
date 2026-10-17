@@ -34,7 +34,7 @@
             <TextBlock Text="Optimización" Style="{StaticResource SummarySectionTitle}" />
             <TextBlock Text="Revisa los ajustes disponibles antes de aplicarlos." Style="{StaticResource MutedText}" MaxWidth="520" HorizontalAlignment="Left" Margin="0,6,0,0" />
           </StackPanel>
-          <Button Grid.Column="1" Content="Optimizar PC" Command="{Binding PrepareCommand}" Style="{StaticResource PrimaryButton}" VerticalAlignment="Top" Visibility="{Binding HasPreview, Converter={StaticResource Visible}, ConverterParameter=inverse}" AutomationProperties.Name="Preparar optimización del PC sin aplicar cambios" />
+          <Button Grid.Column="1" Content="Optimizar PC" Command="{Binding PrepareCommand}" ToolTip="{Binding DataContext.DiagnosticApplyNotice, RelativeSource={RelativeSource AncestorType=Window}}" ToolTipService.ShowOnDisabled="True" Style="{StaticResource PrimaryButton}" VerticalAlignment="Top" Visibility="{Binding HasPreview, Converter={StaticResource Visible}, ConverterParameter=inverse}" AutomationProperties.Name="Preparar optimización del PC sin aplicar cambios" />
         </Grid>
         <TextBlock Text="Cada ajuste conserva su estado anterior." Style="{StaticResource Small}" Margin="0,0,0,12" />
         <StackPanel Visibility="{Binding IsOptimizing, Converter={StaticResource Visible}}" Margin="0,0,0,12"><TextBlock Text="{Binding ProgressTitle}" Style="{StaticResource Small}" /><ProgressBar Value="{Binding ProgressPercent, Mode=OneWay}" IsIndeterminate="{Binding IsPreparing}" Height="5" Margin="0,7,0,7" AutomationProperties.Name="Progreso de optimización del PC" /><TextBlock Text="{Binding ProgressLabel}" Style="{StaticResource Small}" /></StackPanel>
@@ -137,6 +137,7 @@
               <StackPanel>
                 <TextBlock Text="{Binding MachineTitle}" FontSize="20" LineHeight="28" FontWeight="SemiBold" />
                 <TextBlock Text="{Binding SampleDetail}" Style="{StaticResource Small}" Margin="0,4,0,0" />
+                <TextBlock Text="{Binding DriveDetail}" Style="{StaticResource Small}" Margin="0,4,0,0" Visibility="{Binding IsScanning, Converter={StaticResource Visible}}" />
                 <Grid Margin="0,16,0,0">
                   <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                   <StackPanel Margin="0,0,20,0">
@@ -164,6 +165,7 @@
                   <StackPanel Margin="0,8,0,0" MaxWidth="600" HorizontalAlignment="Left">
                     <TextBlock Text="{Binding DeviceIdentity}" Style="{StaticResource Small}" />
                     <TextBlock Text="{Binding MachineSubtitle}" Style="{StaticResource Small}" Margin="0,4,0,0" />
+                    <TextBlock Text="{Binding DriveDetail}" Style="{StaticResource Small}" Margin="0,4,0,0" Visibility="{Binding IsScanning, Converter={StaticResource Visible}, ConverterParameter=inverse}" />
                     <TextBlock Text="{Binding CpuName}" Style="{StaticResource Small}" Margin="0,8,0,0" />
                     <TextBlock Text="{Binding GpuName}" Style="{StaticResource Small}" />
                     <TextBlock Text="Durante el análisis se muestra la última lectura. Al terminar, el promedio de las muestras válidas. «No disponible» significa que la fuente no entregó el dato." Style="{StaticResource Small}" Margin="0,8,0,0" />

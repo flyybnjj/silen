@@ -11,6 +11,7 @@ public sealed partial class ToolsViewModel : ObservableObject
     private readonly INativeOptimizationService service;
     private readonly Func<string, Func<CancellationToken, Task>, Task<bool>> run;
     private readonly Func<bool> canRun;
+    private readonly Func<bool> canApply;
     private string status = "Lee los ajustes actuales para elegir una mejora. No hace falta analizar primero.";
     private string cleanupStatus = "Calculando temporales de al menos 24 horas. Se conservarán para recuperar antes de una purga definitiva.";
     private bool inspected;
@@ -28,14 +29,15 @@ public sealed partial class ToolsViewModel : ObservableObject
 
     internal ToolsViewModel(INativeOptimizationService service,
         Func<string, Func<CancellationToken, Task>, Task<bool>> run, Func<bool> canRun, Func<string?>? chooseGameExecutable = null,
-        Func<string, string, bool>? confirmAction = null)
+        Func<string, string, bool>? confirmAction = null, Func<bool>? canApply = null)
     {
         this.service = service; this.run = run; this.canRun = canRun;
+        this.canApply = canApply ?? canRun;
         this.chooseGameExecutable = chooseGameExecutable ?? (() => null);
         InitializeManual(confirmAction ?? ((_, _) => false));
         InitializeRecovery();
         ChooseGameCommand = Command(_ => ChooseGameAsync());
-        ApplyGpuCommand = Command(_ => ApplyGpuAsync(), _ => gameExecutable is not null);
+        ApplyGpuCommand = Command(_ => ApplyGpuAsync(), _ => CanApplySelection() && gameExecutable is not null);
         RefreshCommand = Command(_ => RefreshAsync());
         EnableToggleCommand = Command(p => SetToggleAsync(p, true), p => p is ToggleChoice t && t.Setting.CanEnable && t.Setting.Enabled != true);
         DisableToggleCommand = Command(p => SetToggleAsync(p, false), p => p is ToggleChoice t && t.Setting.CanDisable && (t.Setting.UsesBackupRestore || t.Setting.Enabled != false));
@@ -43,11 +45,13 @@ public sealed partial class ToolsViewModel : ObservableObject
         ToggleStartupCommand = Command(_ => ToggleStartupAsync(), _ => SelectedStartup?.Entry.CanChange == true);
         UndoCommand = Command(_ => UndoAsync(), _ => SelectedChange is { CanUndo: true });
         PreviewTempCommand = Command(_ => PreviewTempAsync());
-        CleanTempCommand = Command(_ => CleanTempAsync(), _ => TemporaryFiles.Any(f => f.Selected));
-        CleanAllTempCommand = Command(_ => CleanAllTempAsync(), _ => directTempReady && directTempBytes > 0);
+        CleanTempCommand = Command(_ => CleanTempAsync(), _ => CanApplySelection() && TemporaryFiles.Any(f => f.Selected));
+        CleanAllTempCommand = Command(_ => CleanAllTempAsync(), _ => CanApplySelection() && directTempReady && directTempBytes > 0);
         SelectAllTempCommand = new RelayCommand(_ => SelectFiles(true), _ => canRun() && TemporaryFiles.Count > 0);
         ClearTempSelectionCommand = new RelayCommand(_ => SelectFiles(false), _ => canRun() && TemporaryFiles.Any(f => f.Selected));
     }
+
+    private bool CanApplySelection() => canRun() && canApply();
 
     private ICommand Command(Func<object?, Task> work, Func<object?, bool>? extra = null) =>
         new AsyncCommand(work, p => canRun() && (extra?.Invoke(p) ?? true), ex => Status = ex.Message);

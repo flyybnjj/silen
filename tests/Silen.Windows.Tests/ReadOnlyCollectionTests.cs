@@ -16,11 +16,15 @@ public sealed class ReadOnlyCollectionTests(ITestOutputHelper output)
         var elapsed = Stopwatch.StartNew();
         var progress = new List<ScanProgress>();
         var snapshot = await new WindowsCollector().CollectAsync(cancellationToken: cancellation.Token, detailedProgress: new ImmediateProgress<ScanProgress>(progress.Add));
-        Assert.Equal(Enumerable.Range(1, 14), progress.Select(step => step.CompletedSteps));
+        Assert.Equal(Enumerable.Range(1, 14), progress.Select(step => step.CompletedSteps).Distinct());
         Assert.All(progress, step => Assert.Equal(14, step.TotalSteps));
-        Assert.All(progress.Take(4), step => Assert.Null(step.Sample));
+        Assert.All(progress.Where(step => step.CompletedSteps <= 4), step => Assert.Null(step.Sample));
+        Assert.Same(snapshot.Machine, progress.First().Machine);
+        var units = Assert.Single(progress, step => step.Drives is not null);
+        Assert.Equal(snapshot.Drives, units.Drives);
+        Assert.True(progress.IndexOf(units) < progress.FindIndex(step => step.CompletedSteps == 2));
         Assert.Equal(snapshot.Machine.DeviceKind == Silen.Core.DeviceKind.Laptop, snapshot.Machine.IsLaptop);
-        Assert.All(snapshot.Samples.Select((sample, index) => (sample, index)), pair => Assert.Same(pair.sample, progress[pair.index + 4].Sample));
+        Assert.Equal(snapshot.Samples, progress.Where(step => step.Sample is not null).Select(step => step.Sample));
         Assert.Equal(10, snapshot.Samples.Count);
         Assert.True(elapsed.Elapsed >= TimeSpan.FromSeconds(9));
         Assert.Equal(10, snapshot.Samples.Select(s => s.At).Distinct().Count());

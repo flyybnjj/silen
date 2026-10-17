@@ -38,7 +38,8 @@ public sealed record MachineInfo
 }
 
 public enum DeviceKind { Unknown, Laptop, Desktop }
-public sealed record ScanProgress(string Stage, string Detail, int CompletedSteps, int TotalSteps, MetricSample? Sample = null);
+public sealed record ScanProgress(string Stage, string Detail, int CompletedSteps, int TotalSteps, MetricSample? Sample = null,
+    MachineInfo? Machine = null, IReadOnlyList<StorageInfo>? Drives = null);
 public sealed record OemDriverPackage(string Name, string Version, string Category, string ReleaseDate, string OperatingSystem, string? DownloadUrl, string? DetailUrl);
 public sealed record OemSupportResult(bool Success, string Provider, string DeviceName, string SupportUrl, List<OemDriverPackage> Packages, string Message, bool ModelMatched, string SerialDisplay = "");
 

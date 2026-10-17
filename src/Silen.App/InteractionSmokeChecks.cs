@@ -17,6 +17,7 @@ internal static class InteractionSmokeChecks
     public static async Task<IReadOnlyList<string>> RunAsync(string directory, Dispatcher dispatcher)
     {
         var checks = new List<string>();
+        await RunEarlyScanChecksAsync(directory, dispatcher, checks);
         await RunRemainingViewChecksAsync(directory, checks);
         await RunUnfocusedTableSelectionChecksAsync(directory, checks);
         await RunSummaryRecoveryChecksAsync(directory, checks);
@@ -222,41 +223,6 @@ internal static class InteractionSmokeChecks
             if (command == tools.EnableToggleCommand || command == tools.DisableToggleCommand || command == tools.ApplyPowerCommand || command == tools.ToggleStartupCommand)
                 await tools.ApplyManualAsync();
         }
-        await ExecuteAsync(tools.DisableToggleCommand, tools.ImprovementToggles.Single());
-        Check(tools.ImprovementToggles.Single().State == "Desactivado" && tools.HasChanges, "Applying animations refreshes actual state and exposes reversible change");
-        tools.SelectedChange = tools.Changes.Single();
-        await ExecuteAsync(tools.UndoCommand);
-        Check(tools.ImprovementToggles.Single().State == "Activado" && !tools.HasChanges, "Undo restores previous state and refreshes change list");
-        await ExecuteAsync(tools.EnableToggleCommand, tools.GamingToggles.Single(t => t.Setting.Id == "game-mode"));
-        await ExecuteAsync(tools.DisableToggleCommand, tools.GamingToggles.Single(t => t.Setting.Id == "xbox-captures"));
-        Check(tools.GamingToggles.Single(t => t.Setting.Id == "game-mode").Setting.Enabled == true && tools.GamingToggles.Single(t => t.Setting.Id == "xbox-captures").Setting.Enabled == false, "Gaming controls dispatch separate Game Mode and Xbox capture changes");
-        tools.SelectedPowerScheme = tools.PowerSchemes.Single(p => p.Id == "performance");
-        await ExecuteAsync(tools.ApplyPowerCommand);
-        Check(tools.PowerSchemes.Single(p => p.Id == "performance").Active && !tools.ApplyPowerCommand.CanExecute(null), "Applying selected existing power plan refreshes active state");
-        var powerControl = new ContentControl { Content = tools, ContentTemplate = (DataTemplate)Application.Current.FindResource("PowerSchemeTemplate") };
-        powerControl.Measure(new Size(700, 240)); powerControl.Arrange(new Rect(0, 0, 700, 240)); powerControl.UpdateLayout();
-        Check(VisibleText(powerControl).Contains("Rendimiento fixture"), "Power selector displays selected plan name rather than object or GUID");
-        tools.SelectedStartup = tools.StartupEntries.Single();
-        await ExecuteAsync(tools.ToggleStartupCommand);
-        Check(!tools.StartupEntries.Single().Entry.Enabled && tools.StartupEntries.Single().State == "Retirada de Run" && tools.StartupActionLabel == "Añadir restauración de inicio", "Startup action removes only selected Run entry and offers restoring it");
-        await ExecuteAsync(tools.PreviewTempCommand);
-        Check(tools.TemporaryFiles.Count == 2 && !tools.CleanTempCommand.CanExecute(null) && tools.TemporaryFiles.All(f => !f.Selected), "Cleanup previews files without deleting or selecting them automatically");
-        tools.TemporaryFiles[0].Selected = true;
-        native.CancelPreviewNext = true;
-        await ExecuteAsync(tools.PreviewTempCommand);
-        Check(!tools.HasPreview && !tools.HasTemporaryFiles && !tools.CleanTempCommand.CanExecute(null) && tools.CleanupStatus.Contains("cancelada"), "Cancelled replacement preview clears stale file IDs selection and cleanup command");
-        await ExecuteAsync(tools.PreviewTempCommand);
-        tools.TemporaryFiles[1].Selected = true;
-        await ExecuteAsync(tools.CleanTempCommand);
-        Check(native.CleanedIds.SequenceEqual(["second"]) && !tools.HasTemporaryFiles && tools.CleanupStatus.Contains("2,0 KiB"), "Cleanup sends only selected file IDs and shows recovered bytes with a fresh preview required");
-        var countBeforeFailure = tools.Changes.Count;
-        native.FailNext = true;
-        await ExecuteAsync(tools.EnableToggleCommand, tools.ImprovementToggles.Single() with { Setting = tools.ImprovementToggles.Single().Setting with { Enabled = null } });
-        Check(tools.Status.Contains("Fixture permission denied") && tools.HasActionError && tools.Changes.Count == countBeforeFailure && model.Status.Contains("Fixture permission denied"), "Rejected change reports backend reason distinctly and footer finishes without a successful change");
-        foreach (var pending in tools.PendingManual.ToArray()) tools.RemoveManualCommand.Execute(pending);
-        native.PartialCancelNext = true;
-        await ExecuteAsync(tools.EnableToggleCommand, tools.GamingToggles.Single(t => t.Setting.Id == "xbox-captures"));
-        Check(tools.GamingToggles.Single(t => t.Setting.Id == "xbox-captures").Setting.Enabled == true && tools.Changes.Count == countBeforeFailure + 1 && tools.Status.Contains("cancelada"), "Cancelled partial change refreshes current state and saved undo record before releasing operation");
         Check(model.HasBundledCollector && model.CaptureCommand.CanExecute(null), "Included collector enables capture without executable selection");
         model.ProcessId = Environment.ProcessId.ToString();
         await model.CaptureAsync();
@@ -297,6 +263,41 @@ internal static class InteractionSmokeChecks
         cancelScan = false;
         Check(await model.ScanAsync() && serialRequests.SequenceEqual([false]) && model.HasOemPackages && model.CanSearchSerial, "Fresh scan automatically finds model without sending serial");
         Check(model.DeviceKindLabel == "Portátil" && model.DeviceIdentity.Contains("FixtureSku"), "Device type, model and SKU displayed");
+        await ExecuteAsync(tools.DisableToggleCommand, tools.ImprovementToggles.Single());
+        Check(tools.ImprovementToggles.Single().State == "Desactivado" && tools.HasChanges, "Applying animations refreshes actual state and exposes reversible change");
+        tools.SelectedChange = tools.Changes.Single();
+        await ExecuteAsync(tools.UndoCommand);
+        Check(tools.ImprovementToggles.Single().State == "Activado" && !tools.HasChanges, "Undo restores previous state and refreshes change list");
+        await ExecuteAsync(tools.EnableToggleCommand, tools.GamingToggles.Single(t => t.Setting.Id == "game-mode"));
+        await ExecuteAsync(tools.DisableToggleCommand, tools.GamingToggles.Single(t => t.Setting.Id == "xbox-captures"));
+        Check(tools.GamingToggles.Single(t => t.Setting.Id == "game-mode").Setting.Enabled == true && tools.GamingToggles.Single(t => t.Setting.Id == "xbox-captures").Setting.Enabled == false, "Gaming controls dispatch separate Game Mode and Xbox capture changes");
+        tools.SelectedPowerScheme = tools.PowerSchemes.Single(p => p.Id == "performance");
+        await ExecuteAsync(tools.ApplyPowerCommand);
+        Check(tools.PowerSchemes.Single(p => p.Id == "performance").Active && !tools.ApplyPowerCommand.CanExecute(null), "Applying selected existing power plan refreshes active state");
+        var powerControl = new ContentControl { Content = tools, ContentTemplate = (DataTemplate)Application.Current.FindResource("PowerSchemeTemplate") };
+        powerControl.Measure(new Size(700, 240)); powerControl.Arrange(new Rect(0, 0, 700, 240)); powerControl.UpdateLayout();
+        Check(VisibleText(powerControl).Contains("Rendimiento fixture"), "Power selector displays selected plan name rather than object or GUID");
+        tools.SelectedStartup = tools.StartupEntries.Single();
+        await ExecuteAsync(tools.ToggleStartupCommand);
+        Check(!tools.StartupEntries.Single().Entry.Enabled && tools.StartupEntries.Single().State == "Retirada de Run" && tools.StartupActionLabel == "Añadir restauración de inicio", "Startup action removes only selected Run entry and offers restoring it");
+        await ExecuteAsync(tools.PreviewTempCommand);
+        Check(tools.TemporaryFiles.Count == 2 && !tools.CleanTempCommand.CanExecute(null) && tools.TemporaryFiles.All(f => !f.Selected), "Cleanup previews files without deleting or selecting them automatically");
+        tools.TemporaryFiles[0].Selected = true;
+        native.CancelPreviewNext = true;
+        await ExecuteAsync(tools.PreviewTempCommand);
+        Check(!tools.HasPreview && !tools.HasTemporaryFiles && !tools.CleanTempCommand.CanExecute(null) && tools.CleanupStatus.Contains("cancelada"), "Cancelled replacement preview clears stale file IDs selection and cleanup command");
+        await ExecuteAsync(tools.PreviewTempCommand);
+        tools.TemporaryFiles[1].Selected = true;
+        await ExecuteAsync(tools.CleanTempCommand);
+        Check(native.CleanedIds.SequenceEqual(["second"]) && !tools.HasTemporaryFiles && tools.CleanupStatus.Contains("2,0 KiB"), "Cleanup sends only selected file IDs and shows recovered bytes with a fresh preview required");
+        var countBeforeFailure = tools.Changes.Count;
+        native.FailNext = true;
+        await ExecuteAsync(tools.EnableToggleCommand, tools.ImprovementToggles.Single() with { Setting = tools.ImprovementToggles.Single().Setting with { Enabled = null } });
+        Check(tools.Status.Contains("Fixture permission denied") && tools.HasActionError && tools.Changes.Count == countBeforeFailure && model.Status.Contains("Fixture permission denied"), "Rejected change reports backend reason distinctly and footer finishes without a successful change");
+        foreach (var pending in tools.PendingManual.ToArray()) tools.RemoveManualCommand.Execute(pending);
+        native.PartialCancelNext = true;
+        await ExecuteAsync(tools.EnableToggleCommand, tools.GamingToggles.Single(t => t.Setting.Id == "xbox-captures"));
+        Check(tools.GamingToggles.Single(t => t.Setting.Id == "xbox-captures").Setting.Enabled == true && tools.Changes.Count == countBeforeFailure + 1 && tools.Status.Contains("cancelada"), "Cancelled partial change refreshes current state and saved undo record before releasing operation");
         model.DriverSearch = "no such device";
         Check(!model.DriversView.Cast<object>().Any(), "Driver inventory filter");
         model.OemSearch = "chipset";
@@ -337,6 +338,7 @@ internal static class InteractionSmokeChecks
         Check(!model.HasUpdates && model.UpdateStatus.Contains("no disponible") && model.HasError, "Unavailable update query reports useful result");
         model.ClearErrorCommand.Execute(null);
         Check(!model.HasError, "Dismiss error command");
+        model.ApplySnapshot(fixture, isCurrent: true);
         var guidesBeforeStartup = model.Actions.Count;
         var integratedSections = new List<string>();
         model.SectionNavigationRequested += integratedSections.Add;
@@ -383,6 +385,7 @@ internal static class InteractionSmokeChecks
         navigationModel.SelectedPage = 2;
         await dispatcher.InvokeAsync(navigationWindow.UpdateLayout, DispatcherPriority.Loaded);
         Check(VisibleText(navigationWindow, true).Contains("Drivers para tu equipo") && !VisibleText(navigationWindow, true).Contains("Inventario de drivers"), "Unscanned driver page shows discovery instead of empty inventory");
+        navigationModel.ApplySnapshot(fixture, isCurrent: true);
         await navigationModel.OpenGuideAsync("OpenStartup");
         await dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
         navigationWindow.UpdateLayout();
@@ -627,6 +630,7 @@ internal static class InteractionSmokeChecks
             ConfirmRestoreFallback = result => { fallbackPrompts++; return fallback; },
             ConfirmAction = (_, _) => { if (invalidateUndo) native.HideBackups = true; return undo; }
         });
+        model.ApplySnapshot(new SystemSnapshot(), isCurrent: true);
         await model.PcOptimization.PrepareAsync();
         await model.PcOptimization.ApplyAsync();
         if (point.Calls != 0 || native.Mutations != 0) throw new InvalidOperationException("Rechazar el lote no debe solicitar siquiera un punto de restauración.");
@@ -811,6 +815,7 @@ internal static class InteractionSmokeChecks
             CreateNativeTools = () => native, CreatePreferences = () => preferences,
             ConfirmAction = (_, _) => approved, RequestRestart = () => restarts++
         });
+        model.ApplySnapshot(new SystemSnapshot(), isCurrent: true);
         await model.Tools.RefreshAsync();
         var row = model.Tools.GamingToggles.First(item => item.Setting.Id == "game-mode");
         model.Tools.EnableToggleCommand.Execute(row);
@@ -905,6 +910,99 @@ internal static class InteractionSmokeChecks
         checks.Add("Eliminar definitivamente confirma su propio lote separado de restaurar");
     }
 
+    private static async Task RunEarlyScanChecksAsync(string directory, Dispatcher dispatcher, List<string> checks)
+    {
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        IProgress<ScanProgress>? current = null;
+        var attempt = 0;
+        var native = new FixtureOptimizationService();
+        var fixture = new SystemSnapshot
+        {
+            Machine = new() { Manufacturer = "Equipo de prueba", Model = "Modelo", CpuName = "Procesador de prueba", GpuName = "Gráficos de prueba", TotalMemoryGb = 16 },
+            Drives = [new() { Name = "C:", FreeGb = 50, TotalGb = 100 }],
+            Samples = Enumerable.Range(0, 10).Select(index => new MetricSample { CpuPercent = 32, MemoryPercent = 61 }).ToList()
+        };
+        using var model = new MainViewModel(Path.Combine(directory, "early-scan"), new ViewModelServices
+        {
+            CreateNativeTools = () => native, ConfirmAction = (_, _) => true,
+            Collect = async (_, token, detailed) =>
+            {
+                attempt++; current = detailed;
+                detailed?.Report(new("Equipo", "Identidad leída. Midiendo el resto del equipo…", 1, 14, Machine: fixture.Machine));
+                detailed?.Report(new("Unidades", "Capacidad y espacio libre leídos. Midiendo el resto del equipo…", 1, 14, Drives: fixture.Drives));
+                started.TrySetResult(); await release.Task.WaitAsync(token);
+                if (attempt == 3) throw new UnauthorizedAccessException("Fuente de diagnóstico no accesible.");
+                return fixture with { Id = Guid.NewGuid() };
+            },
+            FindOem = (_, _, _) => Task.FromResult(new OemSupportResult(false, "Prueba", "", "", [], "Sin catálogo", false))
+        });
+        if (model.PcOptimization.PrepareCommand.CanExecute(null))
+            throw new InvalidOperationException("Optimizar PC debe esperar al primer diagnóstico completo.");
+        await model.Tools.RefreshAsync();
+        model.Tools.EnableToggleCommand.Execute(model.Tools.GamingToggles.First(row => row.Setting.Id == "game-mode"));
+        if (await model.PcOptimization.PrepareAsync() || await model.Tools.ApplyManualAsync() || native.Mutations != 0)
+            throw new InvalidOperationException("Las llamadas directas tampoco pueden aplicar sin diagnóstico completo.");
+        var scan = model.ScanAsync(); await started.Task;
+        await dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+        if (model.MachineTitle != "Equipo de prueba Modelo" || !model.MemoryDetail.Contains("16") || !model.DriveDetail.Contains("C:") || model.HasSnapshot || model.CpuValue != "Midiendo…" || model.MemoryTrace.Count != 0)
+            throw new InvalidOperationException("La identidad, RAM y unidades deben aparecer antes de la primera muestra sin inventar lecturas.");
+        checks.Add("Identidad, capacidad de RAM y unidades visibles antes del resultado completo; recursos aún Midiendo");
+        var window = new MainWindow(model) { ShowActivated = false, ShowInTaskbar = false, Left = -10000, Top = -10000 };
+        window.Show();
+        try
+        {
+            foreach (var theme in new[] { "Claro", "Oscuro" })
+            foreach (var size in new[] { new Size(1240, 820), new Size(1000, 680) })
+            {
+                ThemeManager.Apply(theme); window.Width = size.Width; window.Height = size.Height;
+                await RenderFixtureWindowAsync(window, Path.Combine(directory, $"carga-basicos-{theme}-{size.Width}x{size.Height}.png"));
+                var prepare = Visuals<Button>(window).Single(button => button.IsVisible && button.Command == model.PcOptimization.PrepareCommand);
+                if (prepare.IsEnabled) throw new InvalidOperationException("El botón visible de Optimizar PC debe estar desactivado durante la carga.");
+            }
+            for (var index = 0; index < 3; index++) current!.Report(new("Recursos", $"Muestra {index + 1} de 10 recibida.", index + 5, 14, fixture.Samples[index]));
+            await dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+            if (!model.SampleDetail.Contains("Midiendo… 3/10") || !model.MetricSampleLabel.Contains("Midiendo") || model.HasCompletedResult || model.CpuTrace.Count != 3 || model.CpuValue != "32%")
+                throw new InvalidOperationException("Una traza de tres muestras debe indicar Midiendo y análisis pendiente.");
+            foreach (var theme in new[] { "Claro", "Oscuro" })
+            {
+                ThemeManager.Apply(theme);
+                await RenderFixtureWindowAsync(window, Path.Combine(directory, $"carga-3-muestras-{theme}-1000x680.png"));
+            }
+        }
+        finally { window.Hide(); ThemeManager.Apply("Claro"); }
+        var old = current;
+        model.CancelCommand.Execute(null); await scan;
+        if (model.CpuTrace.Count != 0 || model.HasSnapshot || model.MachineTitle.Contains("Modelo") || model.DriveDetail.Contains("C:") || model.PcOptimization.PrepareCommand.CanExecute(null) || model.Tools.ApplyManualCommand.CanExecute(null) || !model.Status.Contains("cancelado"))
+            throw new InvalidOperationException("Cancelar debe descartar las trazas parciales y conservar bloqueada la aplicación.");
+        checks.Add("Diagnóstico parcial y cancelado no habilita Optimizar PC ni aplicar; muestras rotuladas Midiendo");
+        started = new(TaskCreationOptions.RunContinuationsAsynchronously); release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        scan = model.ScanAsync(); await started.Task;
+        old!.Report(new("Equipo antiguo", "Callback retrasado", 14, 14, fixture.Samples[0], Machine: new() { Manufacturer = "No debe verse" }));
+        await dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+        if (model.MachineTitle.Contains("No debe verse") || model.CpuTrace.Count != 0 || model.ScanPercent == 100)
+            throw new InvalidOperationException("El progreso de un análisis anterior no debe contaminar el siguiente.");
+        release.TrySetResult(); if (!await scan || !model.CanApplyChanges || !model.HasCompletedResult || model.CpuTrace.Count != 10)
+            throw new InvalidOperationException("Solo el diagnóstico terminado debe publicar promedios y habilitar las acciones.");
+        await model.PcOptimization.PrepareAsync();
+        if (!model.PcOptimization.ApplyCommand.CanExecute(null) || !model.Tools.ApplyManualCommand.CanExecute(null))
+            throw new InvalidOperationException("Las selecciones preparadas deben habilitarse tras un diagnóstico completo.");
+        checks.Add("Dos análisis seguidos aíslan generaciones y solo el resultado terminado habilita ambas selecciones");
+        var saved = model.Snapshot;
+        started = new(TaskCreationOptions.RunContinuationsAsynchronously); release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        scan = model.ScanAsync(); await started.Task;
+        await dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+        if (model.PcOptimization.ApplyCommand.CanExecute(null) || model.Tools.ApplyManualCommand.CanExecute(null) || model.CpuTrace.Count != 0)
+            throw new InvalidOperationException("Un nuevo análisis bloquea incluso las selecciones ya preparadas y retira las trazas anteriores.");
+        current!.Report(new("Recursos", "Muestra 1 de 10 recibida.", 5, 14, fixture.Samples[0]));
+        await dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+        release.TrySetResult();
+        if (await scan || model.CanApplyChanges || model.PcOptimization.ApplyCommand.CanExecute(null) || model.Tools.ApplyManualCommand.CanExecute(null) || !model.HasError || model.Snapshot != saved || !model.Status.Contains("último análisis guardado") || model.CpuTrace.Count != 10)
+            throw new InvalidOperationException("Un fallo descarta parciales, identifica el análisis anterior y no reabre Aplicar.");
+        checks.Add("Fallo tras datos parciales conserva solo el análisis anterior rotulado y bloquea las selecciones pendientes");
+        window.Close();
+    }
+
     private static async Task RunAutomaticStartupChecksAsync(string directory, List<string> checks)
     {
         var collected = 0;
@@ -991,7 +1089,8 @@ internal static class InteractionSmokeChecks
             Open = (_, _) => throw new InvalidOperationException("La optimización del PC no debe abrir herramientas externas.")
         });
         var pc = model.PcOptimization;
-        CheckPc(pc.PrepareCommand.CanExecute(null) && !pc.ApplyCommand.CanExecute(null), "Optimizar PC está disponible sin análisis ni Fortnite; aplicar requiere preparar una selección");
+        CheckPc(!pc.PrepareCommand.CanExecute(null) && !pc.ApplyCommand.CanExecute(null), "Optimizar PC espera al diagnóstico completo; aplicar requiere además preparar una selección");
+        model.ApplySnapshot(new SystemSnapshot(), isCurrent: true);
         var window = new MainWindow(model) { Width = 1000, Height = 680, ShowInTaskbar = false, ShowActivated = false, Left = -10000, Top = -10000 };
         try
         {
@@ -1037,8 +1136,9 @@ internal static class InteractionSmokeChecks
             CheckPc(model.Tools.HasChanges && model.Tools.Changes.Single().CanUndo, "El resultado actualiza los respaldos disponibles para restaurar");
             await RenderFixtureWindowAsync(window, Path.Combine(directory, "pc-resultado-minimo.png"));
             var resultText = Visuals<TextBlock>(window).First(text => text.IsVisible && text.Text == pc.Status);
+            resultText.BringIntoView(); window.UpdateLayout();
             var resultPosition = resultText.TransformToAncestor(window).Transform(new Point());
-            CheckPc(resultPosition.Y >= 0 && resultPosition.Y + resultText.ActualHeight < window.ActualHeight - 100, "El resultado de optimización se ve sin desplazar la ventana mínima");
+            CheckPc(resultPosition.Y >= 0 && resultPosition.Y + resultText.ActualHeight < window.ActualHeight - 100 && FitsWindow(window, applyButton), "El resultado es accesible por desplazamiento con el diagnóstico completo y Aplicar permanece fijo");
             pc.ClearSelectionCommand.Execute(null);
             pc.Options.Single(row => row.Option.Id == "game-mode").Selected = true;
             native.FailNext = true;
@@ -1076,6 +1176,7 @@ internal static class InteractionSmokeChecks
             native.BlockInspection = true;
             var preparing = pc.PrepareAsync();
             await native.InspectionStarted.Task;
+            ((FrameworkElement)window.FindName("PcOptimizationSection")).BringIntoView(); window.UpdateLayout();
             await RenderFixtureWindowAsync(window, Path.Combine(directory, "pc-preparando-minimo.png"));
             var progressBar = Visuals<System.Windows.Controls.ProgressBar>(window).First(bar => bar.IsVisible && System.Windows.Automation.AutomationProperties.GetName(bar) == "Progreso de optimización del PC");
             var progressPosition = progressBar.TransformToAncestor(window).Transform(new Point());
@@ -1111,6 +1212,7 @@ internal static class InteractionSmokeChecks
         });
         await model.InitializeAsync();
         CheckPackage(model.WindowsUpdate.Health.Paused && model.WindowsUpdate.ResumeCommand.CanExecute(null) && native.UpdateResumeCalls == 0, "El estado pausado/deshabilitado se muestra sin repararlo automáticamente");
+        model.ApplySnapshot(new SystemSnapshot(), isCurrent: true);
         var window = new MainWindow(model) { Width = 1000, Height = 680, ShowInTaskbar = false, ShowActivated = false, Left = -10000, Top = -10000 };
         async Task ExecutePackage(ICommand command)
         {
@@ -1332,6 +1434,7 @@ internal static class InteractionSmokeChecks
             ramScroll.ScrollToBottom();
             await RenderFixtureWindowAsync(window, Path.Combine(directory, "dns-resultados-minimo.png"));
             CheckUniversal(Visuals<Button>(window).Any(button => button.IsVisible && button.Command == model.RamNetwork.MeasureCommand), "La vista de DNS mantiene disponible la medición real y sus resultados");
+            model.ApplySnapshot(new SystemSnapshot(), isCurrent: true);
             model.SelectedPage = 0; await model.PcOptimization.FindProductsAsync();
             model.PcOptimization.SelectedProduct = model.PcOptimization.Products.Single(); await model.PcOptimization.LocateProductAsync();
             model.PcOptimization.SelectedExecutable = model.PcOptimization.Executables.Single();

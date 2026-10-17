@@ -21,6 +21,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool startupAttempted;
     private string startupNotice = "Silen detecta los recursos y dispositivos al abrirse. La información aparecerá aquí cuando termine.", startupError = "";
     private readonly List<MetricSample> liveSamples = [];
+    private MachineInfo? scanMachine;
+    private IReadOnlyList<StorageInfo>? scanDrives;
     private bool busy;
     private bool scanning;
     private bool snapshotIsCurrent;
@@ -87,7 +89,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (change.PropertyName == nameof(RamNetwork.DnsStatus)) Status = RamNetwork.DnsStatus;
         };
         Restart = new(services.RequestRestart, services.ConfirmAction, () => CanStartOperation);
-        Tools = new(nativeTools, RunBusyAsync, () => CanStartOperation, services.ChooseGameExecutable, services.ConfirmAction);
+        Tools = new(nativeTools, RunBusyAsync, () => CanStartOperation, services.ChooseGameExecutable, services.ConfirmAction, () => CanApplyChanges);
         Tools.ChangesApplied += Restart.Register;
         Tools.PartialChangesApplied += Restart.RegisterPartial;
         Recovery = new(services.CreateRestorePoint(), nativeTools, services.ConfirmRestoreFallback, services.ConfirmAction,
@@ -106,7 +108,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             WindowsUpdate.SetHealth(await nativeTools.InspectWindowsUpdateAsync(token));
         }, services.OpenBloomProviderPage);
         Bloom.PropertyChanged += (_, change) => { if (change.PropertyName == nameof(Bloom.Status)) Status = Bloom.Status; };
-        PcOptimization = new(services.CreatePcOptimization(nativeTools), RunBusyAsync, () => CanStartOperation, services.ConfirmPcOptimization, Tools.RefreshStateAsync, Recovery, services.CreateInstalledProducts(), services.ChooseGameExecutable, applicationTimer);
+        PcOptimization = new(services.CreatePcOptimization(nativeTools), RunAfterDiagnosticAsync, () => CanApplyChanges, services.ConfirmPcOptimization, Tools.RefreshStateAsync, Recovery, services.CreateInstalledProducts(), services.ChooseGameExecutable, applicationTimer);
         PcOptimization.ChangesApplied += Restart.Register;
         PcOptimization.PartialChangesApplied += Restart.RegisterPartial;
         PcOptimization.PropertyChanged += (_, change) => { if (change.PropertyName == nameof(PcOptimization.Status) && PcOptimization.HasStatus) Status = PcOptimization.Status; };
@@ -207,6 +209,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string ScanPercentLabel => $"{ScanPercent:N0}% · {scanProgress.CompletedSteps}/{scanProgress.TotalSteps} pasos completados";
     public bool IsClosing => lifetime.IsStopping;
     public bool CanStartOperation => !IsBusy && !IsClosing && !AppUpdate.IsRestarting;
+    public bool CanApplyChanges => CanStartOperation && HasCompletedResult && snapshotIsCurrent;
+    public string DiagnosticApplyNotice => IsScanning ? "Midiendo… Al terminar podrás preparar y aplicar ajustes." : !snapshotIsCurrent ? "Completa la detección del equipo antes de aplicar ajustes." : "";
     public bool HasSnapshot => snapshot is not null;
     public bool HasNotes => snapshot?.Notes.Count > 0;
     public bool HasFindings => Findings.Count > 0;
@@ -296,21 +300,24 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _ => "Recursos, drivers y ajustes, en un mismo lugar."
     };
     public string Observation => snapshot is null ? "Aún no hay un análisis guardado." : $"Último análisis: {snapshot.CapturedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm", Labels.Culture)}";
-    public string MachineTitle => IsScanning ? "Observando recursos en vivo" : snapshot is null ? "Diagnóstico del equipo" : Labels.Known(string.Join(" ", new[] { snapshot.Machine.Manufacturer, string.IsNullOrWhiteSpace(snapshot.Machine.ProductName) ? snapshot.Machine.Model : snapshot.Machine.ProductName }.Where(s => !string.IsNullOrWhiteSpace(s))));
-    public string DeviceKindLabel => snapshot?.Machine.DeviceKind switch { DeviceKind.Laptop => "Portátil", DeviceKind.Desktop => "Escritorio", _ => "Tipo de equipo desconocido" };
-    public string DeviceIdentity => IsScanning || snapshot is null ? "El tipo de equipo y el modelo aparecerán al terminar." : $"{DeviceKindLabel} · Modelo {Labels.Known(snapshot.Machine.Model)} · SKU {Labels.Known(snapshot.Machine.SystemSku)}";
-    public string MachineSubtitle => IsScanning ? "Lecturas reales del equipo actual; los huecos indican datos no disponibles." : snapshot is null ? "Windows · análisis local" : $"{Labels.Known(snapshot.Machine.OsName)} · {Labels.Known(snapshot.Machine.OsVersion)}";
-    public string CpuName => IsScanning ? "CPU del equipo actual" : Labels.Known(snapshot?.Machine.CpuName);
-    public string GpuName => IsScanning ? "Gráficos del equipo actual" : Labels.Known(snapshot?.Machine.GpuName);
-    public string CpuValue => Labels.Number(Value(s => s.CpuPercent), "%");
-    public string MemoryValue => Labels.Number(Value(s => s.MemoryPercent), "%");
-    public string GpuValue => Labels.Number(Value(s => s.GpuPercent), "%");
+    private MachineInfo? DisplayMachine => IsScanning ? scanMachine : snapshot?.Machine;
+    public string MachineTitle => DisplayMachine is not { } machine ? IsScanning ? "Midiendo…" : "Diagnóstico del equipo" : Labels.Known(string.Join(" ", new[] { machine.Manufacturer, string.IsNullOrWhiteSpace(machine.ProductName) ? machine.Model : machine.ProductName }.Where(s => !string.IsNullOrWhiteSpace(s))));
+    public string DeviceKindLabel => DisplayMachine?.DeviceKind switch { DeviceKind.Laptop => "Portátil", DeviceKind.Desktop => "Escritorio", _ => "Tipo de equipo desconocido" };
+    public string DeviceIdentity => DisplayMachine is not { } machine ? IsScanning ? "Midiendo identidad del equipo…" : "El tipo de equipo y el modelo aparecerán al analizar." : $"{DeviceKindLabel} · Modelo {Labels.Known(machine.Model)} · SKU {Labels.Known(machine.SystemSku)}";
+    public string MachineSubtitle => DisplayMachine is not { } machine ? IsScanning ? "Midiendo sistema…" : "Windows · análisis local" : $"{Labels.Known(machine.OsName)} · {Labels.Known(machine.OsVersion)}";
+    public string CpuName => IsScanning && scanMachine is null ? "Midiendo procesador…" : Labels.Known(DisplayMachine?.CpuName);
+    public string GpuName => IsScanning && scanMachine is null ? "Midiendo gráficos…" : Labels.Known(DisplayMachine?.GpuName);
+    private string ResourceValue(Func<MetricSample, double?> selector, string unit) => IsScanning && liveSamples.Count == 0 ? "Midiendo…" : Labels.Number(Value(selector), unit);
+    public string CpuValue => ResourceValue(s => s.CpuPercent, "%");
+    public string MemoryValue => ResourceValue(s => s.MemoryPercent, "%");
+    public string GpuValue => ResourceValue(s => s.GpuPercent, "%");
     public string LiveSummary => $"CPU {CpuValue} · Memoria {MemoryValue} · GPU {GpuValue}";
-    public string CpuTemperature => Labels.Number(Value(s => s.CpuTemperature), " °C");
-    public string GpuTemperature => Labels.Number(Value(s => s.GpuTemperature), " °C");
-    public string MemoryDetail => IsScanning ? "Memoria en uso en la última lectura" : snapshot?.Machine.TotalMemoryGb > 0 ? $"{Labels.Number(snapshot.Machine.TotalMemoryGb, " GB", 1)} instalados" : "Capacidad no disponible";
-    public string SampleDetail => IsScanning ? $"{SpanishText.Count(liveSamples.Count, "muestra real", "muestras reales")} · última lectura" : snapshot is null ? "Se tomarán muestras durante unos segundos." : $"{SpanishText.Count(snapshot.Samples.Count, "muestra", "muestras")} · promedio de esta observación";
-    public string MetricSampleLabel => IsScanning ? "Última muestra recibida" : "Promedio de muestras válidas";
+    public string CpuTemperature => ResourceValue(s => s.CpuTemperature, " °C");
+    public string GpuTemperature => ResourceValue(s => s.GpuTemperature, " °C");
+    public string MemoryDetail => DisplayMachine?.TotalMemoryGb > 0 ? $"{Labels.Number(DisplayMachine.TotalMemoryGb, " GB", 1)} instalados" : IsScanning && scanMachine is null ? "Midiendo capacidad…" : "Capacidad no disponible";
+    public string DriveDetail => (IsScanning ? scanDrives : snapshot?.Drives) is not { } drives ? IsScanning ? "Midiendo unidades…" : "Unidades no disponibles" : drives.Count == 0 ? "Unidades no disponibles" : string.Join(" · ", drives.Select(drive => $"{drive.Name} {Labels.Number(drive.FreeGb, " GB", 1)} libres de {Labels.Number(drive.TotalGb, " GB", 1)}"));
+    public string SampleDetail => IsScanning ? $"Midiendo… {liveSamples.Count}/10 muestras · última lectura; análisis pendiente" : snapshot is null ? "Se tomarán muestras durante unos segundos." : $"{SpanishText.Count(snapshot.Samples.Count, "muestra", "muestras")} · promedio de esta observación";
+    public string MetricSampleLabel => IsScanning ? "Midiendo… última muestra; análisis pendiente" : "Promedio de muestras válidas";
     private IReadOnlyList<MetricSample> DisplaySamples => IsScanning ? liveSamples : snapshot?.Samples ?? [];
     public IReadOnlyList<double?> CpuTrace => DisplaySamples.Select(s => s.CpuPercent).ToList();
     public IReadOnlyList<double?> MemoryTrace => DisplaySamples.Select(s => s.MemoryPercent).ToList();
@@ -393,7 +400,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var completed = await RunBusyAsync("Preparando análisis…", async token =>
         {
             var generation = ++scanGeneration;
-            liveSamples.Clear(); scanProgress = new("Preparando análisis", "Reuniendo las fuentes de Windows.", 0, 1); IsScanning = true;
+            liveSamples.Clear(); scanMachine = null; scanDrives = null; snapshotIsCurrent = false;
+            scanProgress = new("Preparando análisis", "Midiendo… Reuniendo las fuentes de Windows.", 0, 14); IsScanning = true;
             try
             {
                 var progress = new Progress<string>(text => { if (generation == scanGeneration && !token.IsCancellationRequested) Status = text; });
@@ -405,8 +413,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 try { await store.SaveAsync(result); await RefreshHistoryAsync(); Status = "Análisis guardado. Revisa los ajustes o los drivers del modelo."; }
                 catch (Exception ex) { Status = "Análisis completado; no se pudo guardar el historial."; Error = $"Puedes exportar el resultado. Error al guardar: {ex.Message}"; }
             }
-            catch (OperationCanceledException) { Status = "Análisis cancelado. Las muestras parciales no se guardaron."; throw; }
-            finally { IsScanning = false; scanGeneration++; liveSamples.Clear(); Changed(null); }
+            catch (OperationCanceledException) { Status = "Análisis cancelado. Los datos parciales se descartaron." + (HasSnapshot ? " Se muestra el último análisis guardado." : ""); throw; }
+            catch { Status = "Análisis incompleto. Los datos parciales se descartaron." + (HasSnapshot ? " Se muestra el último análisis guardado." : ""); throw; }
+            finally { IsScanning = false; scanGeneration++; liveSamples.Clear(); scanMachine = null; scanDrives = null; Changed(null); }
         });
         if (completed && !IsClosing)
         {
@@ -422,6 +431,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     internal void ApplyScanProgress(ScanProgress value)
     {
         scanProgress = value;
+        if (value.Machine is not null) scanMachine = value.Machine;
+        if (value.Drives is not null) scanDrives = value.Drives;
         if (value.Sample is not null) liveSamples.Add(value.Sample);
         Changed(null);
     }
@@ -456,9 +467,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         IsBusy = true; Error = ""; Status = message;
         try { await lifetime.RunAsync(work); return true; }
         catch (OperationCanceledException) { if (!Status.StartsWith("Análisis cancelado", StringComparison.Ordinal)) Status = "Operación cancelada. Puedes volver a intentarlo."; return false; }
-        catch (Exception ex) { Error = ex.Message; Status = "La operación no se completó. Revisa el detalle."; return false; }
+        catch (Exception ex) { Error = ex.Message; if (!Status.StartsWith("Análisis incompleto", StringComparison.Ordinal)) Status = "La operación no se completó. Revisa el detalle."; return false; }
         finally { IsBusy = false; }
     }
+
+    private Task<bool> RunAfterDiagnosticAsync(string message, Func<CancellationToken, Task> work) =>
+        CanApplyChanges ? RunBusyAsync(message, work) : Task.FromResult(false);
 
     private async Task ExportAsync(object? parameter)
     {

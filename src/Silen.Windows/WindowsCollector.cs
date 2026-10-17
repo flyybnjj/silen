@@ -11,13 +11,19 @@ namespace Silen.Windows;
 
 public sealed class WindowsCollector
 {
+    private readonly Func<string, CancellationToken, IEnumerable<Dictionary<string, object?>>> readRows;
+
+    public WindowsCollector() : this(ReadRows) { }
+
+    internal WindowsCollector(Func<string, CancellationToken, IEnumerable<Dictionary<string, object?>>> readRows) => this.readRows = readRows;
+
     public Task<SystemSnapshot> CollectAsync(IProgress<string>? progress = null, CancellationToken cancellationToken = default, IProgress<ScanProgress>? detailedProgress = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
         return Task.Run(() => Collect(progress, cancellationToken, detailedProgress), cancellationToken);
     }
 
-    private static SystemSnapshot Collect(IProgress<string>? progress, CancellationToken token, IProgress<ScanProgress>? detailedProgress)
+    private SystemSnapshot Collect(IProgress<string>? progress, CancellationToken token, IProgress<ScanProgress>? detailedProgress)
     {
         var snapshot = new SystemSnapshot();
         var updateHealth = new NativeOptimizationService().ReadWindowsUpdateStatus();
@@ -25,10 +31,13 @@ public sealed class WindowsCollector
         if (!updateHealth.CanSearch) snapshot.Notes.Add(updateHealth.Message);
         progress?.Report("Leyendo sistema, CPU y gráficos…");
         snapshot = snapshot with { Machine = Machine(snapshot.Notes, token) };
-        detailedProgress?.Report(new ScanProgress("Equipo", "Sistema, CPU, gráficos e identidad del equipo leídos.", 1, 14));
+        detailedProgress?.Report(new ScanProgress("Equipo", "Sistema, CPU, gráficos e identidad del equipo leídos.", 1, 14, Machine: snapshot.Machine));
         token.ThrowIfCancellationRequested();
         progress?.Report("Leyendo unidades y dispositivos…");
         snapshot.Drives.AddRange(Drives(snapshot.Notes, token));
+        // La copia no comparte la lista mutable que continúa construyendo el diagnóstico.
+        detailedProgress?.Report(new ScanProgress("Unidades", "Capacidad y espacio libre leídos. Midiendo el resto del equipo…", 1, 14,
+            Drives: Array.AsReadOnly(snapshot.Drives.ToArray())));
         snapshot.Drivers.AddRange(Drivers(snapshot.Notes, token));
         detailedProgress?.Report(new ScanProgress("Dispositivos", "Unidades y controladores instalados leídos.", 2, 14));
         token.ThrowIfCancellationRequested();
@@ -90,7 +99,7 @@ public sealed class WindowsCollector
         return snapshot;
     }
 
-    private static MachineInfo Machine(List<string> notes, CancellationToken token)
+    private MachineInfo Machine(List<string> notes, CancellationToken token)
     {
         var system = Query("Sistema", "SELECT Manufacturer, Model, SystemFamily, SystemSKUNumber, TotalPhysicalMemory, PCSystemType FROM Win32_ComputerSystem", notes, token).FirstOrDefault();
         var product = Query("Producto", "SELECT Name, Version FROM Win32_ComputerSystemProduct", notes, token).FirstOrDefault();
@@ -133,7 +142,7 @@ public sealed class WindowsCollector
         };
     }
 
-    private static IEnumerable<StorageInfo> Drives(List<string> notes, CancellationToken token)
+    private IEnumerable<StorageInfo> Drives(List<string> notes, CancellationToken token)
     {
         foreach (var drive in Query("Unidades", "SELECT DeviceID, VolumeName, FileSystem, DriveType, Size, FreeSpace FROM Win32_LogicalDisk WHERE DriveType = 2 OR DriveType = 3", notes, token))
         {
@@ -152,7 +161,7 @@ public sealed class WindowsCollector
         }
     }
 
-    private static List<DriverInfo> Drivers(List<string> notes, CancellationToken token)
+    private List<DriverInfo> Drivers(List<string> notes, CancellationToken token)
     {
         var signed = new Dictionary<string, DriverInfo>(StringComparer.OrdinalIgnoreCase);
         foreach (var row in Query("Drivers", "SELECT DeviceID, DeviceName, Manufacturer, DriverProviderName, DriverVersion, DriverDate, IsSigned, DeviceClass FROM Win32_PnPSignedDriver", notes, token))
@@ -176,7 +185,7 @@ public sealed class WindowsCollector
         (id.StartsWith("PCI\\VEN_", StringComparison.OrdinalIgnoreCase) || id.StartsWith("USB\\VID_", StringComparison.OrdinalIgnoreCase) ||
          id.StartsWith("HID\\VID_", StringComparison.OrdinalIgnoreCase)) && id.Count(c => c == '\\') == 1) ?? "";
 
-    private static IEnumerable<InventoryStartupEntry> Startup(List<string> notes, CancellationToken token)
+    private IEnumerable<InventoryStartupEntry> Startup(List<string> notes, CancellationToken token)
     {
         var entries = new List<InventoryStartupEntry>();
         foreach (var hive in new[] { RegistryHive.CurrentUser, RegistryHive.LocalMachine })
@@ -202,28 +211,37 @@ public sealed class WindowsCollector
         return entries.DistinctBy(e => e.Name + "\n" + e.Command, StringComparer.OrdinalIgnoreCase).OrderBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase);
     }
 
-    private static List<Dictionary<string, object?>> Query(string provider, string query, List<string> notes, CancellationToken token)
+    private List<Dictionary<string, object?>> Query(string provider, string query, List<string> notes, CancellationToken token)
     {
         var rows = new List<Dictionary<string, object?>>();
         TryProvider(provider, notes, () =>
         {
             token.ThrowIfCancellationRequested();
-            using var searcher = new ManagementObjectSearcher(new ManagementScope(@"\\.\root\cimv2"), new ObjectQuery(query),
-                new System.Management.EnumerationOptions { Timeout = TimeSpan.FromSeconds(5), ReturnImmediately = true });
-            using var results = searcher.Get();
-            foreach (ManagementObject row in results)
+            foreach (var row in readRows(query, token))
             {
-                using (row)
-                {
-                    token.ThrowIfCancellationRequested();
-                    var values = new Dictionary<string, object?>();
-                    foreach (PropertyData property in row.Properties) values[property.Name] = property.Value;
-                    rows.Add(values);
-                }
+                token.ThrowIfCancellationRequested();
+                rows.Add(row);
             }
             if (rows.Count == 0) notes.Add($"{provider}: la fuente no entregó registros.");
         });
         return rows;
+    }
+
+    private static IEnumerable<Dictionary<string, object?>> ReadRows(string query, CancellationToken token)
+    {
+        using var searcher = new ManagementObjectSearcher(new ManagementScope(@"\\.\root\cimv2"), new ObjectQuery(query),
+            new System.Management.EnumerationOptions { Timeout = TimeSpan.FromSeconds(5), ReturnImmediately = true });
+        using var results = searcher.Get();
+        foreach (ManagementObject row in results)
+        {
+            using (row)
+            {
+                token.ThrowIfCancellationRequested();
+                var values = new Dictionary<string, object?>();
+                foreach (PropertyData property in row.Properties) values[property.Name] = property.Value;
+                yield return values;
+            }
+        }
     }
 
     private static void TryProvider(string provider, List<string> notes, Action action)

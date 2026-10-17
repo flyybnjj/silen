@@ -322,7 +322,7 @@ Aplicar este checklist a cada vista individual. Marcar solo lo probado con
 evidencia; si un estado no corresponde a su tarea, registrar «No aplica» y el
 motivo. No heredar la aprobación de Resumen ni marcar funciones propuestas.
 
-- [ ] Carga: indicar qué ocurre; conservar progreso y cancelación cuando existan.
+- [ ] Carga: indicar qué ocurre; conservar progreso y cancelación cuando existan. En Resumen, publicar identidad, capacidad de RAM y unidades al obtenerlas; los recursos pendientes dicen «Midiendo…» y las trazas parciales indican cuántas muestras de diez han llegado y que el análisis sigue pendiente. Los promedios y hallazgos solo corresponden al diagnóstico terminado. Optimizar PC y Aplicar esperan al diagnóstico completo actual; cancelar o fallar descarta parciales. Si se conserva un resultado anterior, identificarlo como último análisis guardado y mantener Aplicar bloqueado hasta una nueva detección completa.
 - [ ] Vacío: explicar por qué faltan datos y qué puede hacer el usuario, sin cifras ficticias.
 - [ ] Error: problema concreto, recuperación disponible y distinción de la acción principal.
 - [ ] Selección: contadores 0/1/varios correctos, disponibilidad y efectos visibles; preparar no aplica.
@@ -361,7 +361,7 @@ documentar una regla no acredita que esté activa ni que haya sido probada en UI
 | --- | --- |
 | Identidad y tokens | Source Serif 4, Lino, variantes claras/oscuras y brick están en los recursos. Los nombres WPF conservan los alias indicados abajo. |
 | Selección | Casillas, navegación y listas verificadas en XAML. Las filas de tabla conservan una marca lateral de 1 unidad al perder foco, además del relleno neutro; comprobadas mediante render WPF en claro, oscuro y alto contraste simulado. En alto contraste la marca usa Highlight del sistema. El relleno nunca es su único indicador. Revisión manual en alto contraste real pendiente. |
-| Resumen | Composición refinada y referencia de jerarquía. Sus contenidos se conservan en la entrega de las vistas restantes. |
+| Resumen | Composición refinada y referencia de jerarquía. El PR 1 de datos tempranos publica identidad, capacidad de RAM y unidades durante la carga; «Midiendo… n/10» distingue las trazas parciales. Optimizar PC y Aplicar selección principal/manual esperan al diagnóstico completo actual. Cancelación y fallo descartan parciales; un análisis anterior se identifica literalmente y no habilita Aplicar. Verificación automatizada y capturas WPF; no equivale a recorrido manual. |
 | RAM y red | Refinada individualmente: dos columnas de lecturas, interpretación y procesos desplegables, una acción principal «Medir DNS» y «Actualizar detalles» secundaria. Se conservan Source Serif 4 y los tokens existentes. Títulos de sección 22/30, lecturas 24/32 con cifras tabulares, cuerpo 15/24 y metadatos 13/20; texto explicativo limitado a 620 unidades. Acción DNS y alcance completos a 1000×680. Estados vacío, pendiente, error local, progreso y cancelación comprobados con servicios simulados. |
 | Drivers | Actualizaciones primero: Buscar es principal mientras no haya ofertas; Descargar toma ese papel cuando hay resultados. El estado literal y los controles de Windows Update se conservan. Catálogo OEM, filtros, compatibilidad y fuentes oficiales siguen accesibles; búsqueda por modelo secundaria. Títulos 22/30 y secciones planas. |
 | Ajustes | Sin segundo wordmark. Apariencia en un grupo acotado y modo experto separado. Un único Aplicar selección manual fuera del desplazamiento, visible solo con el manual abierto. Temporales, recuperación y Deshacer conservan controles y confirmaciones. Copy distingue retirar de purgar. |
@@ -412,6 +412,20 @@ general anterior sigue siendo la plantilla para cada revisión.
 - [x] Contenido extremo: texto extenso completo mediante desplazamiento y datos desconocidos explícitos.
 - [ ] Movimiento: pausa, minimizar y reducir animaciones pendientes de validación manual.
 - [x] Alcance del código: sin renombrados; Bloom y su plural pendientes fuera de esta tarea.
+
+### Carga temprana de Resumen · PR 1 · 2026-10-16
+
+Evidencia: `docs/rendimiento-pr1-2026-10-16.md`. Este registro distingue pruebas
+automáticas de uso manual; no acredita el arranque completo de producción.
+
+- [x] Carga: identidad, RAM instalada y unidades antes del resultado final; «Midiendo… n/10», progreso y cancelación conservados.
+- [x] Vacío/error/cancelación: WMI vacío y denegado; parciales descartados; análisis anterior identificado si existe.
+- [x] Selección/aplicación: Optimizar PC y ambas selecciones bloqueados hasta diagnóstico completo actual, también por llamada directa; dos análisis seguidos y callbacks antiguos comprobados.
+- [x] Claro/oscuro y 1240×820/1000×680: renders WPF automáticos de carga y comprobación de botón desactivado. Capturas reales de datos durante 0/10 y 3/10 separadas de los fixtures.
+- [x] Recuperación simulada: batería existente, sin cambiar preflight ni journal.
+- [ ] Hover, foco, teclado completo, lector de pantalla y alto contraste reales: no recorridos manualmente.
+- [ ] Movimiento/reducir animaciones: validación manual pendiente; animación intacta.
+- [x] Alcance: PR 1 únicamente; PR 2, render y malla pendientes de autorización.
 
 ### Verificación de RAM y red · 2026-10-16
 
