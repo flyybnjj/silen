@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -6,6 +7,7 @@ namespace Silen.Core;
 
 public sealed class ReportStore
 {
+    private const int MaximumFileBytes = 16 * 1024 * 1024;
     private readonly string directory;
     private readonly SemaphoreSlim actionGate = new(1, 1);
     public static JsonSerializerOptions JsonOptions { get; } = new()
@@ -134,14 +136,29 @@ public sealed class ReportStore
 
     private static async Task<string> ReadSharedTextAsync(string path)
     {
-
         await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-        using var reader = new StreamReader(stream);
+        if (stream.Length > MaximumFileBytes) throw TooLarge();
+        using var content = new MemoryStream();
+        var buffer = new byte[8192];
+        int read;
+        while ((read = await stream.ReadAsync(buffer)) > 0)
+        {
+            // También limita un archivo que crezca después de abrir el handle.
+            if (content.Length + read > MaximumFileBytes) throw TooLarge();
+            content.Write(buffer, 0, read);
+        }
+        content.Position = 0;
+        using var reader = new StreamReader(content);
         return await reader.ReadToEndAsync();
     }
 
+    private static InvalidDataException TooLarge() => new("El archivo de historial supera 16 MiB. Se conservó íntegro; revisa su almacenamiento antes de volver a abrirlo o guardarlo.");
+
     private async Task WriteAtomicallyAsync(string path, string text)
     {
+        // Lectura y escritura comparten límite para no crear un historial que
+        // la propia aplicación no pueda volver a abrir. No trunca datos antiguos.
+        if (Encoding.UTF8.GetByteCount(text) > MaximumFileBytes) throw TooLarge();
         Directory.CreateDirectory(directory);
         var temporary = Path.Combine(directory, $".{Guid.NewGuid():N}.tmp");
         try
