@@ -79,3 +79,39 @@ de confirmaciones ni rutas nuevas expuestas en el progreso.
 - [ ] Aplicación real sobre Windows, punto de restauración real y reinicio: no ejecutados.
 
 No se atribuye mejora de rendimiento del PC a estos cambios de presentación.
+
+
+## Portable entregado y arranque real
+
+Fuente del ejecutable: `60020a7fc401604889d7a81823636b6a0e6aa927`.
+Portable: `artifacts/Silen-win-x64/` y ZIP del mismo nombre. Copia del escritorio:
+`C:\Users\avalo\Desktop\Silen - preversion\Silen.exe`; el acceso `Silen.lnk`
+conserva ese destino. Se verificaron SHA-256 de los **33 archivos**. La carpeta
+anterior se conserva en `Silen - preversion anterior 20261017-Bloom-60020a7`.
+
+- EXE SHA-256: `9A8F5267C091B7D5500AE195C0F416A860D69E6A07367D7154BB6CDC990B4C1D`.
+- ZIP SHA-256: `9E016C2E6218665E600E1F8E81AE57EFCBDE2C34A47861FA2C0B1D2D2CED8B40`.
+- El ejecutable portable publicado pasa de nuevo las **267 comprobaciones WPF**;
+  evidencia en `portable-interaction/interaction-checks.json`.
+- Distribución local sin firma de editor; publicación firmada y ayudante en carpeta
+  protegida continúan como trabajo separado.
+
+Tres arranques normales del ejecutable del escritorio, sin sonda que omita tareas
+de producción, mediante `scripts/measure-startup.ps1`. Tiempos desde el inicio del
+proceso; mediana y rango en este equipo:
+
+| Hito | Mediana (s) | Rango (s) |
+|---|---:|---:|
+| Ventana creada | 1.026 | 0.987–1.053 |
+| Identidad y RAM disponibles internamente | 1.168 | 1.136–1.221 |
+| Primera muestra | 2.475 | 2.445–2.536 |
+| Resumen listo para mostrarse tras retirar la carga | 2.476 | 2.446–2.537 |
+| Diagnóstico completo | 12.084 | 12.082–12.139 |
+| Todas las tareas iniciales, incluidas consultas externas | 15.545 | 14.911–31.919 |
+
+La visibilidad instrumentada exige `Visibility.Visible`, opacidad ≥0,98 y layout;
+no acredita el instante exacto de presentación GPU ni la fluidez del aleteo.
+Las consultas externas explican la variación de inicialización global; no se espera
+a ellas para retirar la carga de Bloom. No se comparan como mejora con 0889f1e:
+ese flujo revelaba la vista previa antes de esperar una muestra y el criterio cambió
+por petición del usuario. No se afirma mejora de CPU/RAM ni del rendimiento del PC.

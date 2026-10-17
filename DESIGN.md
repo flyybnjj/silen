@@ -558,3 +558,6 @@ anterior. La animación acompaña trabajo real; no garantiza una mejora del PC.
 - [ ] Recorrido manual completo con teclado, lector de pantalla, hover/foco y alto contraste real: no realizado.
 - [ ] Reducir movimiento de Windows, DPI y fluidez de producción: requieren verificación manual; no se acreditan con capturas estáticas.
 - [ ] Cambios reales, recuperación real o reinicio: no ejecutados en este equipo para verificar la interfaz.
+
+- [x] Compilación y entrega: 692 unitarias correctas (una OEM omitida), 267 comprobaciones WPF en fuentes y repetidas en el portable; 33 archivos del escritorio verificados por SHA-256.
+- [x] Arranque normal del portable, tres repeticiones: Resumen tras primera muestra 2,476 [2,446–2,537] s; diagnóstico completo 12,084 [12,082–12,139] s. Son hitos de layout y de diagnóstico, no una medición GPU ni una promesa para otros equipos. Las tareas iniciales completas varían 14,911–31,919 s; continúan tras revelar Resumen.
