@@ -215,4 +215,3 @@ internal static partial class InteractionSmokeChecks
         return rows;
     }
 }
-

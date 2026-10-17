@@ -35,6 +35,44 @@ No se modifica la ilustración ni se añade el fondo neutro propuesto, porque la
 poses ensayadas no lo requieren. No equivalen a todos los fotogramas posibles,
 a un ensayo de GPU o a un recorrido con lector de pantalla.
 
+## Sonda del EXE normal
+
+`scripts/measure-startup.ps1` abre el portable sin argumentos por la ruta real
+Program.Main/App.OnStartup. Solo en ese proceso define
+`SILEN_STARTUP_DIAGNOSTICS_DIRECTORY`; no cambia las variables del usuario.
+Con la variable ausente no se observa ni escribe un informe adicional. No se
+activa en el ayudante, actualizador ni modos de pruebas con argumentos.
+
+Incluye InitializeAsync, historial y preferencias reales, colector, OEM, GitHub,
+inspección de herramientas/Windows Update y carga real de perfiles. Al terminar
+el modo de medición guarda tiempos, contadores y fechas de muestras, retira sus
+observadores y cierra su propia instancia. No serializa snapshot, claves, rutas
+del usuario ni mensajes de error de red. Un fichero existente no se sobrescribe.
+La fixture usa directorios únicos y ejecuta dos mediciones para comprobarlo.
+
+Regresión observada antes de implementar: `startup-red/status.json`. Después,
+`interactions-source-final/interaction-checks.json`: **256 comprobaciones**.
+La batería unitaria mantiene **670 correctas y una OEM opcional omitida**;
+compilación de solución sin errores ni advertencias. La revisión independiente
+señaló la repetición de la fixture, corregida con subdirectorios únicos.
+
+Un intento de repetir toda la batería antigua en una carpeta ya poblada falló
+por su historial persistido de acciones externas simuladas; no se contó como
+pasada. La prueba focalizada del nuevo diagnóstico sí repite dos veces su carpeta
+padre. Las baterías completas usan una salida nueva, como el protocolo existente.
+También se conservó el fallo de compilación por dos builds concurrentes que
+compartían temporales WPF; repetido secuencialmente, el build pasó.
+
+## Ciclo de vida de BLOOM
+
+Sonda existente recompilada contra las fuentes actuales: **33 comprobaciones,
+cero omisiones**. Inicio sin foco legible, animación activa, pausa al trabajar,
+minimizar, ocultar y desactivar durante la introducción; reanudación y cierre con
+reloj/cuadros detenidos. Evidencia en `lifecycle-probe/bin/Release/net10.0-windows/results.json`.
+No se inicializaron acciones del sistema ni se cambiaron preferencias de Windows.
+En este equipo animaciones estaban activadas, alto contraste desactivado y tier
+de renderizado 2. Reducir movimiento y alto contraste reales no se ejercitaron.
+
 ## Registro pendiente de completar en esta entrega
 
 - Medición optativa desde el EXE normal y comparación con el host de fases.

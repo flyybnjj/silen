@@ -392,11 +392,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public async Task InitializeAsync(bool autoScan = false)
     {
-        await RunBusyAsync("Preparando Silen…", async token => { await RefreshHistoryAsync(); await Settings.LoadAsync(token); Status = "Preparando la información de tu equipo…"; });
+        using var initialization = StartupDiagnostics.Measure("InitializeAsync");
+        using (StartupDiagnostics.Measure("PreferencesAndHistory"))
+            await RunBusyAsync("Preparando Silen…", async token => { await RefreshHistoryAsync(); await Settings.LoadAsync(token); Status = "Preparando la información de tu equipo…"; });
         if (autoScan && !startupAttempted && !IsClosing) await ScanAtStartupAsync();
-        if (!IsClosing) await Tools.RefreshAsync();
-        if (!IsClosing) await WindowsUpdate.RefreshAsync();
-        if (autoScan && !IsClosing) { await applicationTimer.StartAsync(); Settings.RefreshTimerProfiles(); }
+        if (!IsClosing) { using var tools = StartupDiagnostics.Measure("Tools"); await Tools.RefreshAsync(); }
+        if (!IsClosing) { using var update = StartupDiagnostics.Measure("WindowsUpdate"); await WindowsUpdate.RefreshAsync(); }
+        if (autoScan && !IsClosing) { using var profiles = StartupDiagnostics.Measure("Profiles"); await applicationTimer.StartAsync(); Settings.RefreshTimerProfiles(); }
         if (autoScan && startupAttempted && !HasSnapshot && !IsClosing) { Status = startupNotice; Error = startupError; }
     }
 
@@ -421,7 +423,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             {
                 var progress = new Progress<string>(text => { if (generation == scanGeneration && !token.IsCancellationRequested) Status = text; });
                 var detailed = new Progress<ScanProgress>(value => { if (generation == scanGeneration && !token.IsCancellationRequested) ApplyScanProgress(value); });
-                var result = await services.Collect(progress, token, detailed);
+                SystemSnapshot result;
+                using (StartupDiagnostics.Measure("Collect")) result = await services.Collect(progress, token, detailed);
                 token.ThrowIfCancellationRequested();
                 IsScanning = false; scanGeneration++;
                 ApplySnapshot(result, true);
@@ -566,7 +569,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         OemPackages.Clear(); SelectedOemPackage = null; oemResult = null; Changed(null);
         var completed = await RunBusyAsync(OemStatus, async token =>
         {
-            var result = await services.FindOem(machine, useSerial, token);
+            OemSupportResult result;
+            using (StartupDiagnostics.Measure("OEM")) result = await services.FindOem(machine, useSerial, token);
             token.ThrowIfCancellationRequested();
             oemResult = result;
             foreach (var package in result.Packages) OemPackages.Add(package);

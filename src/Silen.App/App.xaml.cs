@@ -32,6 +32,7 @@ public partial class App : Application
         }
         try
         {
+            using var startupDiagnostics = startupArgs.Length == 0 ? StartupDiagnostics.FromEnvironment() : null;
             if (startupArgs.FirstOrDefault() == AppUpdateStartup.Argument)
             {
                 updateStartup = AppUpdateStartup.Parse(startupArgs);
@@ -88,8 +89,17 @@ public partial class App : Application
             MainWindow = window;
             window.Closed += (_, _) => { if (startupArgs.Length == 0 || driverMode) Shutdown(0); };
             window.Show();
-            if (startupArgs.Length == 0 || driverMode) _ = model.StartAppUpdateCheckAsync();
+            startupDiagnostics?.Observe(model, window);
+            Task? startupUpdate = null;
+            if (startupArgs.Length == 0 || driverMode) startupUpdate = StartupDiagnostics.TrackAsync("GitHub", model.StartAppUpdateCheckAsync);
             await model.InitializeAsync(autoScan: startupArgs.Length == 0 || driverMode);
+            if (startupDiagnostics is not null && (startupArgs.Length == 0 || driverMode))
+            {
+                if (startupUpdate is not null) await startupUpdate;
+                await window.Dispatcher.InvokeAsync(window.UpdateLayout, DispatcherPriority.ApplicationIdle);
+                await startupDiagnostics.SaveAsync(model);
+                await model.PrepareToCloseAsync(); window.Close(); Shutdown(0); return;
+            }
             if (updateStartup is not null)
             {
                 await window.Dispatcher.InvokeAsync(window.UpdateLayout, DispatcherPriority.ApplicationIdle);

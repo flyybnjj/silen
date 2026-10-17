@@ -17,7 +17,7 @@ internal static partial class InteractionSmokeChecks
     public static async Task<IReadOnlyList<string>> RunAsync(string directory, Dispatcher dispatcher)
     {
         var checks = new List<string>();
-
+        await RunStartupDiagnosticsChecksAsync(directory, checks);
         await RunSummaryAccessibilityChecksAsync(directory, checks);
         await RunSummaryLoadingPresentationChecksAsync(directory, dispatcher, checks);
         await RunSummaryMotionContrastChecksAsync(directory, checks);
@@ -1683,4 +1683,3 @@ internal static partial class InteractionSmokeChecks
         }
     }
 }
-
