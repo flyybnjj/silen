@@ -11,7 +11,39 @@
       <Setter Property="FontSize" Value="22" /><Setter Property="LineHeight" Value="30" /><Setter Property="Margin" Value="0" />
     </Style>
     <Style x:Key="SummaryMetric" TargetType="TextBlock" BasedOn="{StaticResource MetricValue}">
-      <Setter Property="FontSize" Value="30" /><Setter Property="LineHeight" Value="38" /><Setter Property="MinHeight" Value="38" /><Setter Property="Margin" Value="0,4,0,0" />
+      <Setter Property="FontSize" Value="30" /><Setter Property="LineHeight" Value="38" /><Setter Property="Height" Value="44" /><Setter Property="Margin" Value="0,4,0,0" />
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding IsScanning}" Value="True"><Setter Property="Foreground" Value="{DynamicResource Muted}" /></DataTrigger>
+        <MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding IsScanning}" Value="True" /><Condition Binding="{Binding HasSummarySamples}" Value="False" /></MultiDataTrigger.Conditions><Setter Property="FontSize" Value="16" /><Setter Property="FontWeight" Value="Normal" /></MultiDataTrigger>
+      </Style.Triggers>
+    </Style>
+    <Style x:Key="SummaryTrace" TargetType="local:ResourceTrace">
+      <Setter Property="ShowGrid" Value="False" /><Setter Property="Height" Value="28" /><Setter Property="Margin" Value="0,8,0,8" />
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding IsScanning}" Value="True"><Setter Property="Height" Value="20" /><Setter Property="Margin" Value="0,4,0,4" /></DataTrigger>
+        <DataTrigger Binding="{Binding ShowSummaryTraces}" Value="False"><Setter Property="Visibility" Value="Hidden" /></DataTrigger>
+      </Style.Triggers>
+    </Style>
+    <Style x:Key="SummaryPrimaryButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+        <Border x:Name="Body" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{StaticResource ControlRadius}">
+          <Grid><Border x:Name="HoverLayer" Background="{DynamicResource Text}" Opacity="0" CornerRadius="{StaticResource InnerControlRadius}" IsHitTestVisible="False" />
+            <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center" RecognizesAccessKey="True"><ContentPresenter.Resources>
+              <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}"><Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" /></Style>
+              <Style TargetType="AccessText"><Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" /></Style>
+            </ContentPresenter.Resources></ContentPresenter>
+          </Grid>
+        </Border>
+        <ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="HoverLayer" Property="Opacity" Value="0.04" /></Trigger><Trigger Property="IsPressed" Value="True"><Setter TargetName="HoverLayer" Property="Opacity" Value="0.1" /></Trigger><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Body" Property="BorderBrush" Value="{DynamicResource Accent}" /></Trigger><Trigger Property="IsEnabled" Value="False"><Setter Property="Background" Value="{DynamicResource Raised}" /><Setter Property="Foreground" Value="{DynamicResource Text}" /><Setter Property="BorderBrush" Value="{DynamicResource Line}" /><Setter Property="Cursor" Value="Arrow" /></Trigger></ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
+    </Style>
+    <Style x:Key="SummaryScrollBar" TargetType="ScrollBar" BasedOn="{StaticResource {x:Type ScrollBar}}">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ScrollBar"><Grid Background="{TemplateBinding Background}"><Track x:Name="PART_Track" Orientation="Vertical" IsDirectionReversed="True">
+        <Track.DecreaseRepeatButton><RepeatButton Command="ScrollBar.PageUpCommand" Focusable="False" IsTabStop="False"><RepeatButton.Template><ControlTemplate TargetType="RepeatButton"><Border Background="Transparent" /></ControlTemplate></RepeatButton.Template></RepeatButton></Track.DecreaseRepeatButton>
+        <Track.Thumb><Thumb Focusable="False"><Thumb.Template><ControlTemplate TargetType="Thumb"><Border x:Name="Grip" Background="{DynamicResource ControlLine}" Margin="5,3" CornerRadius="2" /><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Grip" Property="Background" Value="{DynamicResource Text}" /></Trigger><Trigger Property="IsDragging" Value="True"><Setter TargetName="Grip" Property="Background" Value="{DynamicResource Text}" /></Trigger></ControlTemplate.Triggers></ControlTemplate></Thumb.Template></Thumb></Track.Thumb>
+        <Track.IncreaseRepeatButton><RepeatButton Command="ScrollBar.PageDownCommand" Focusable="False" IsTabStop="False"><RepeatButton.Template><ControlTemplate TargetType="RepeatButton"><Border Background="Transparent" /></ControlTemplate></RepeatButton.Template></RepeatButton></Track.IncreaseRepeatButton>
+      </Track></Grid></ControlTemplate></Setter.Value></Setter>
     </Style>
     <Style x:Key="SummaryMetricLabel" TargetType="TextBlock" BasedOn="{StaticResource MutedText}">
       <Setter Property="FontSize" Value="14" /><Setter Property="LineHeight" Value="20" />
@@ -34,15 +66,18 @@
             <TextBlock Text="Optimización" Style="{StaticResource SummarySectionTitle}" />
             <TextBlock Text="Revisa los ajustes disponibles antes de aplicarlos." Style="{StaticResource MutedText}" MaxWidth="520" HorizontalAlignment="Left" Margin="0,6,0,0" />
           </StackPanel>
-          <Button Grid.Column="1" Content="Optimizar PC" Command="{Binding PrepareCommand}" ToolTip="{Binding DataContext.DiagnosticApplyNotice, RelativeSource={RelativeSource AncestorType=Window}}" ToolTipService.ShowOnDisabled="True" Style="{StaticResource PrimaryButton}" VerticalAlignment="Top" Visibility="{Binding HasPreview, Converter={StaticResource Visible}, ConverterParameter=inverse}" AutomationProperties.Name="Preparar optimización del PC sin aplicar cambios" />
+          <StackPanel Grid.Column="1" HorizontalAlignment="Right" MaxWidth="220" Visibility="{Binding HasPreview, Converter={StaticResource Visible}, ConverterParameter=inverse}">
+            <Button Content="Optimizar PC" Command="{Binding PrepareCommand}" ToolTip="{Binding DataContext.DiagnosticApplyNotice, RelativeSource={RelativeSource AncestorType=Window}}" ToolTipService.ShowOnDisabled="True" Style="{StaticResource SummaryPrimaryButton}" HorizontalAlignment="Right" AutomationProperties.Name="Preparar optimización del PC sin aplicar cambios" />
+            <TextBlock Text="{Binding DataContext.DiagnosticApplyNotice, RelativeSource={RelativeSource AncestorType=Window}}" Style="{StaticResource Small}" TextAlignment="Right" Margin="0,6,0,0" Visibility="{Binding DataContext.IsScanning, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Visible}}" />
+          </StackPanel>
         </Grid>
-        <TextBlock Text="Cada ajuste conserva su estado anterior." Style="{StaticResource Small}" Margin="0,0,0,12" />
+        <TextBlock Text="Cada ajuste conserva su estado anterior." Style="{StaticResource Small}" Margin="0,0,0,12" Visibility="{Binding DataContext.IsScanning, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Visible}, ConverterParameter=inverse}" />
         <StackPanel Visibility="{Binding IsOptimizing, Converter={StaticResource Visible}}" Margin="0,0,0,12"><TextBlock Text="{Binding ProgressTitle}" Style="{StaticResource Small}" /><ProgressBar Value="{Binding ProgressPercent, Mode=OneWay}" IsIndeterminate="{Binding IsPreparing}" Height="5" Margin="0,7,0,7" AutomationProperties.Name="Progreso de optimización del PC" /><TextBlock Text="{Binding ProgressLabel}" Style="{StaticResource Small}" /></StackPanel>
         <TextBlock Text="{Binding Status}" Foreground="{DynamicResource Text}" TextWrapping="Wrap" Margin="0,0,0,12" AutomationProperties.LiveSetting="Polite"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="{Binding HasStatus, Converter={StaticResource Visible}}" /><Style.Triggers><DataTrigger Binding="{Binding HasActionError}" Value="True"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
         <local:SummaryErrorNotice Message="{Binding Status}" Margin="0,0,0,12"><local:SummaryErrorNotice.Style><Style TargetType="local:SummaryErrorNotice"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding HasStatus}" Value="True" /><Condition Binding="{Binding HasActionError}" Value="True" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible" /></MultiDataTrigger></Style.Triggers></Style></local:SummaryErrorNotice.Style></local:SummaryErrorNotice>
         <ContentControl Content="{Binding DataContext.Recovery, RelativeSource={RelativeSource AncestorType=Window}}" ContentTemplate="{StaticResource SummaryRecoveryTemplate}" />
         <Expander Header="Resultado de cada ajuste" IsExpanded="False" Margin="0,0,0,12" Visibility="{Binding HasResults, Converter={StaticResource Visible}}"><ItemsControl ItemsSource="{Binding Steps}"><ItemsControl.ItemTemplate><DataTemplate><StackPanel Margin="0,10,0,0"><TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" /><TextBlock Text="{Binding State}" Foreground="{DynamicResource Accent}" /><TextBlock Text="{Binding Message}" Style="{StaticResource Small}" /></StackPanel></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></Expander>
-        <Expander Header="Elegir juego o aplicación" Margin="0,14,0,14" IsEnabled="{Binding DataContext.IsIdle, RelativeSource={RelativeSource AncestorType=Window}}"><StackPanel Margin="0,12,0,0">
+        <Expander Header="Elegir juego o aplicación" Margin="0,14,0,14" IsEnabled="{Binding DataContext.IsIdle, RelativeSource={RelativeSource AncestorType=Window}}" Visibility="{Binding DataContext.IsScanning, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Visible}, ConverterParameter=inverse}"><StackPanel Margin="0,12,0,0">
           <TextBlock Text="Elige un producto para configurar su GPU y temporizador automático. Los controles de teclado y ratón que se ofrecen cambian la entrada de Windows hasta restaurarlos." Style="{StaticResource Small}" Margin="0,0,0,10" />
           <WrapPanel Margin="0,0,0,10"><Button Content="Buscar productos instalados" Command="{Binding FindProductsCommand}" Margin="0,0,8,0" /><Button Content="Elegir .exe manualmente" Command="{Binding ChooseExecutableCommand}" /></WrapPanel>
           <Label Content="Buscar por nombre o editor" Padding="0,0,0,4" Foreground="{DynamicResource Text}" /><TextBox Text="{Binding ProductSearch, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Buscar juego o aplicación" Margin="0,0,0,10" />
@@ -110,8 +145,13 @@
       </Grid>
       <local:SummaryErrorNotice x:Name="SummaryErrorPanel" Grid.Row="1" Message="{Binding Error}" DismissCommand="{Binding ClearErrorCommand}"><local:SummaryErrorNotice.Style><Style TargetType="local:SummaryErrorNotice"><Setter Property="Margin" Value="36,0,36,16" /><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding ShowStart}" Value="True"><Setter Property="Margin" Value="36,24,36,16" /></DataTrigger><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding SelectedPage}" Value="0" /><Condition Binding="{Binding HasError}" Value="True" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible" /></MultiDataTrigger></Style.Triggers></Style></local:SummaryErrorNotice.Style></local:SummaryErrorNotice>
       <local:SummaryErrorNotice Grid.Row="1" Message="{Binding Error}" DismissCommand="{Binding ClearErrorCommand}" Margin="36,0,36,16"><local:SummaryErrorNotice.Style><Style TargetType="{x:Type local:SummaryErrorNotice}"><Setter Property="Visibility" Value="{Binding HasError, Converter={StaticResource Visible}}" /><Style.Triggers><DataTrigger Binding="{Binding SelectedPage}" Value="0"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers></Style></local:SummaryErrorNotice.Style></local:SummaryErrorNotice>
-      <Border Grid.Row="2" Background="{DynamicResource Raised}" CornerRadius="6" Padding="16,13" Margin="36,0,36,16" Visibility="{Binding IsScanning, Converter={StaticResource Visible}}">
-        <StackPanel><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><TextBlock Text="{Binding ScanStage}" FontWeight="SemiBold" AutomationProperties.LiveSetting="Polite" /><TextBlock Grid.Column="1" Text="{Binding ScanPercentLabel}" Style="{StaticResource Small}" Margin="14,0,0,0" /></Grid><ProgressBar Value="{Binding ScanPercent, Mode=OneWay}" Maximum="100" Height="6" Margin="0,10,0,8" AutomationProperties.Name="Progreso del análisis por pasos completados" /><TextBlock Text="{Binding ScanDetail}" Style="{StaticResource Small}" /><TextBlock Text="{Binding LiveSummary}" Style="{StaticResource Small}" Margin="0,5,0,0" /></StackPanel>
+      <Border Grid.Row="2" Background="{DynamicResource Raised}" CornerRadius="6" Visibility="{Binding IsScanning, Converter={StaticResource Visible}}">
+        <Border.Style><Style TargetType="Border"><Setter Property="Padding" Value="16,13" /><Setter Property="Margin" Value="36,0,36,16" /><Style.Triggers><DataTrigger Binding="{Binding SelectedPage}" Value="0"><Setter Property="Padding" Value="16,9" /><Setter Property="Margin" Value="36,0,36,8" /></DataTrigger></Style.Triggers></Style></Border.Style>
+        <StackPanel><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><TextBlock FontWeight="SemiBold" AutomationProperties.LiveSetting="Polite"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="{Binding ScanStage}" /><Style.Triggers><DataTrigger Binding="{Binding SelectedPage}" Value="0"><Setter Property="Text" Value="Analizando tu equipo" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock><TextBlock Grid.Column="1" Text="{Binding ScanPercentLabel}" Style="{StaticResource Small}" Margin="14,0,0,0" /></Grid>
+          <ProgressBar Value="{Binding ScanPercent, Mode=OneWay}" Maximum="100" Margin="0,10,0,8" AutomationProperties.Name="Progreso del análisis por pasos completados"><ProgressBar.Style><Style TargetType="ProgressBar" BasedOn="{StaticResource {x:Type ProgressBar}}"><Setter Property="Height" Value="6" /><Style.Triggers><DataTrigger Binding="{Binding SelectedPage}" Value="0"><Setter Property="Height" Value="3" /><Setter Property="Foreground" Value="{DynamicResource Text}" /><Setter Property="Background" Value="{DynamicResource Line}" /></DataTrigger></Style.Triggers></Style></ProgressBar.Style></ProgressBar>
+          <TextBlock><TextBlock.Style><Style TargetType="TextBlock" BasedOn="{StaticResource Small}"><Setter Property="Text" Value="{Binding ScanDetail}" /><Style.Triggers><DataTrigger Binding="{Binding SelectedPage}" Value="0"><Setter Property="Text" Value="{Binding SummaryScanStep}" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+          <TextBlock Text="{Binding LiveSummary}" Margin="0,5,0,0"><TextBlock.Style><Style TargetType="TextBlock" BasedOn="{StaticResource Small}"><Style.Triggers><DataTrigger Binding="{Binding SelectedPage}" Value="0"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+        </StackPanel>
       </Border>
       <TabControl x:Name="Pages" Grid.Row="3" SelectedIndex="{Binding SelectedPage, Mode=TwoWay}" Background="Transparent" BorderThickness="0" Margin="36,0,36,20">
         <TabControl.Template><ControlTemplate TargetType="TabControl"><ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent" /></ControlTemplate></TabControl.Template>
@@ -119,11 +159,12 @@
           <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
           <Border x:Name="SummarySelectionBar" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="0,0,0,12" Margin="0,0,0,16" Visibility="{Binding PcOptimization.HasPreview, Converter={StaticResource Visible}}">
             <StackPanel>
-              <Grid DataContext="{Binding PcOptimization}"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><TextBlock Text="{Binding SelectionSummary}" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,16,0" AutomationProperties.LiveSetting="Polite" /><Button Grid.Column="1" Content="Aplicar selección" Command="{Binding ApplyCommand}" Style="{StaticResource PrimaryButton}" /></Grid>
+              <Grid DataContext="{Binding PcOptimization}"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><TextBlock Text="{Binding SelectionSummary}" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,16,0" AutomationProperties.LiveSetting="Polite" /><StackPanel Grid.Column="1" MaxWidth="220"><Button Content="Aplicar selección" Command="{Binding ApplyCommand}" Style="{StaticResource SummaryPrimaryButton}" HorizontalAlignment="Right" /><TextBlock Text="{Binding DataContext.DiagnosticApplyNotice, RelativeSource={RelativeSource AncestorType=Window}}" Style="{StaticResource Small}" TextAlignment="Right" Margin="0,6,0,0" Visibility="{Binding DataContext.IsScanning, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Visible}}" /></StackPanel></Grid>
               <Grid DataContext="{Binding Recovery}" Visibility="{Binding HasBatch, Converter={StaticResource Visible}}" Margin="0,12,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><TextBlock Text="{Binding LastChangeLabel}" Style="{StaticResource Small}" VerticalAlignment="Center" Margin="0,0,16,0" /><Button Grid.Column="1" Content="Deshacer último cambio" Command="{Binding UndoCommand}" Style="{StaticResource QuietButton}" ToolTip="{Binding UndoStatus}" ToolTipService.ShowOnDisabled="True" AutomationProperties.HelpText="{Binding UndoStatus}" /></Grid>
             </StackPanel>
           </Border>
           <ScrollViewer x:Name="SummaryScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,8,0">
+          <ScrollViewer.Resources><Style TargetType="ScrollBar" BasedOn="{StaticResource SummaryScrollBar}" /></ScrollViewer.Resources>
           <StackPanel>
             <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="0,20,0,24" Margin="0,0,0,24">
               <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding ShowStart}" Value="True" /><Condition Binding="{Binding PcOptimization.HasPreview}" Value="False" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible" /></MultiDataTrigger></Style.Triggers></Style></Border.Style>
@@ -133,35 +174,38 @@
                 <Button Content="Reintentar detección" Command="{Binding RetryDetectionCommand}" Visibility="{Binding ShowRetryDetection, Converter={StaticResource Visible}}" HorizontalAlignment="Left" />
               </StackPanel>
             </Border>
-            <Border x:Name="EquipmentOverview" Visibility="{Binding HasResourceData, Converter={StaticResource Visible}}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="0,0,0,20" Margin="0,0,0,24">
+            <Border x:Name="EquipmentOverview" Visibility="{Binding HasResourceData, Converter={StaticResource Visible}}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1">
+              <Border.Style><Style TargetType="Border"><Setter Property="Padding" Value="0,0,0,20" /><Setter Property="Margin" Value="0,0,0,24" /><Style.Triggers><DataTrigger Binding="{Binding IsScanning}" Value="True"><Setter Property="Padding" Value="0,0,0,8" /><Setter Property="Margin" Value="0,0,0,12" /></DataTrigger></Style.Triggers></Style></Border.Style>
               <StackPanel>
                 <TextBlock Text="{Binding MachineTitle}" FontSize="20" LineHeight="28" FontWeight="SemiBold" />
                 <TextBlock Text="{Binding SampleDetail}" Style="{StaticResource Small}" Margin="0,4,0,0" />
                 <TextBlock Text="{Binding DriveDetail}" Style="{StaticResource Small}" Margin="0,4,0,0" Visibility="{Binding IsScanning, Converter={StaticResource Visible}}" />
-                <Grid Margin="0,16,0,0">
+                <Grid>
+                  <Grid.Style><Style TargetType="Grid"><Setter Property="Margin" Value="0,16,0,0" /><Style.Triggers><DataTrigger Binding="{Binding IsScanning}" Value="True"><Setter Property="Margin" Value="0,8,0,0" /></DataTrigger></Style.Triggers></Style></Grid.Style>
                   <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                   <StackPanel Margin="0,0,20,0">
                     <TextBlock Text="CPU" Style="{StaticResource SummaryMetricLabel}" />
-                    <TextBlock Text="{Binding CpuValue}" Style="{StaticResource SummaryMetric}" />
-                    <local:ResourceTrace Height="28" Margin="0,8,0,8" Values="{Binding CpuTrace}" Stroke="{DynamicResource Text}" AutomationProperties.Name="Uso de CPU por muestra" />
+                    <TextBlock x:Name="SummaryCpuMetric" Text="{Binding SummaryCpuValue}" Style="{StaticResource SummaryMetric}" />
+                    <local:ResourceTrace x:Name="SummaryCpuTrace" Style="{StaticResource SummaryTrace}" Values="{Binding CpuTrace}" Stroke="{DynamicResource Text}" AutomationProperties.Name="Uso de CPU por muestra" />
                     <TextBlock Text="{Binding CpuName}" Style="{StaticResource Small}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding CpuName}" />
-                    <TextBlock Text="{Binding CpuTemperature, StringFormat=Temperatura: {0}}" Style="{StaticResource Small}" Margin="0,4,0,0" />
+                    <TextBlock x:Name="SummaryCpuTemperature" Text="{Binding SummaryCpuTemperature, StringFormat=Temperatura: {0}}" Style="{StaticResource Small}" Margin="0,4,0,0" />
                   </StackPanel>
                   <StackPanel Grid.Column="1" Margin="0,0,20,0">
                     <TextBlock Text="Memoria" Style="{StaticResource SummaryMetricLabel}" />
-                    <TextBlock Text="{Binding MemoryValue}" Style="{StaticResource SummaryMetric}" />
-                    <local:ResourceTrace Height="28" Margin="0,8,0,8" Values="{Binding MemoryTrace}" Stroke="{DynamicResource MemoryAccent}" AutomationProperties.Name="Uso de memoria por muestra" />
-                    <TextBlock Text="{Binding MemoryDetail}" Style="{StaticResource Small}" />
+                    <TextBlock x:Name="SummaryMemoryMetric" Text="{Binding SummaryMemoryValue}" Style="{StaticResource SummaryMetric}" />
+                    <local:ResourceTrace Style="{StaticResource SummaryTrace}" Values="{Binding MemoryTrace}" Stroke="{DynamicResource MemoryAccent}" AutomationProperties.Name="Uso de memoria por muestra" />
+                    <TextBlock x:Name="SummaryMemoryCapacity" Text="{Binding MemoryDetail}" Style="{StaticResource Small}" />
+                    <TextBlock x:Name="SummaryMemoryNotice" Text="Memoria alta durante el análisis. Revisa las aplicaciones abiertas." Style="{StaticResource Small}" Foreground="{DynamicResource Text}" Margin="0,8,0,0" Visibility="{Binding HasHighMemoryObservation, Converter={StaticResource Visible}}" />
                   </StackPanel>
                   <StackPanel Grid.Column="2">
                     <TextBlock Text="GPU" Style="{StaticResource SummaryMetricLabel}" />
-                    <TextBlock Text="{Binding GpuValue}" Style="{StaticResource SummaryMetric}" />
-                    <local:ResourceTrace Height="28" Margin="0,8,0,8" Values="{Binding GpuTrace}" Stroke="{DynamicResource GpuAccent}" AutomationProperties.Name="Uso de GPU por muestra" />
+                    <TextBlock x:Name="SummaryGpuMetric" Text="{Binding SummaryGpuValue}" Style="{StaticResource SummaryMetric}" />
+                    <local:ResourceTrace Style="{StaticResource SummaryTrace}" Values="{Binding GpuTrace}" Stroke="{DynamicResource GpuAccent}" AutomationProperties.Name="Uso de GPU por muestra" />
                     <TextBlock Text="{Binding GpuName}" Style="{StaticResource Small}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding GpuName}" />
-                    <TextBlock Text="{Binding GpuTemperature, StringFormat=Temperatura: {0}}" Style="{StaticResource Small}" Margin="0,4,0,0" />
+                    <TextBlock x:Name="SummaryGpuTemperature" Text="{Binding SummaryGpuTemperature, StringFormat=Temperatura: {0}}" Style="{StaticResource Small}" Margin="0,4,0,0" />
                   </StackPanel>
                 </Grid>
-                <Expander Header="Información del equipo y de las lecturas" Margin="0,12,0,0" FontSize="13" Foreground="{DynamicResource Muted}">
+                <Expander Header="Información del equipo y de las lecturas" Margin="0,12,0,0" FontSize="13" Foreground="{DynamicResource Muted}" Visibility="{Binding IsScanning, Converter={StaticResource Visible}, ConverterParameter=inverse}">
                   <StackPanel Margin="0,8,0,0" MaxWidth="600" HorizontalAlignment="Left">
                     <TextBlock Text="{Binding DeviceIdentity}" Style="{StaticResource Small}" />
                     <TextBlock Text="{Binding MachineSubtitle}" Style="{StaticResource Small}" Margin="0,4,0,0" />
@@ -339,8 +383,8 @@
           </Grid>
           <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0">
             <StackPanel>
-              <ProgressBar IsIndeterminate="{Binding IsBackgroundBusy}" Value="{Binding ScanPercent, Mode=OneWay}" Visibility="{Binding IsBusy, Converter={StaticResource Visible}}" />
-              <Grid Margin="36,9"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><TextBlock Text="{Binding Status}" Style="{StaticResource Small}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" ToolTip="{Binding Status}" AutomationProperties.LiveSetting="Polite" /><TextBlock Grid.Column="1" Text="Informes locales" Style="{StaticResource Small}" Margin="20,0,0,0" /></Grid>
+              <ProgressBar x:Name="FooterOperationProgress" IsIndeterminate="{Binding IsBackgroundBusy}" Value="{Binding ScanPercent, Mode=OneWay}"><ProgressBar.Style><Style TargetType="ProgressBar" BasedOn="{StaticResource {x:Type ProgressBar}}"><Setter Property="Visibility" Value="{Binding IsBusy, Converter={StaticResource Visible}}" /><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding SelectedPage}" Value="0" /><Condition Binding="{Binding IsScanning}" Value="True" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Collapsed" /></MultiDataTrigger></Style.Triggers></Style></ProgressBar.Style></ProgressBar>
+              <Grid x:Name="FooterOperationStatus" Margin="36,9"><Grid.Style><Style TargetType="Grid"><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding SelectedPage}" Value="0" /><Condition Binding="{Binding IsScanning}" Value="True" /></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Collapsed" /></MultiDataTrigger></Style.Triggers></Style></Grid.Style><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><TextBlock Text="{Binding Status}" Style="{StaticResource Small}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" ToolTip="{Binding Status}" AutomationProperties.LiveSetting="Polite" /><TextBlock Grid.Column="1" Text="Informes locales" Style="{StaticResource Small}" Margin="20,0,0,0" /></Grid>
             </StackPanel>
           </Border>
         </StackPanel>

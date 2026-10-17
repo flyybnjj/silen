@@ -256,7 +256,10 @@ El logo abre Ajustes con nombre accesible y señal visible. Entradas principales
 Resumen, RAM y red, Drivers, Historial y Bloom.
 
 **Lecturas.** Etiqueta, valor y contexto tienen papeles distintos. Las trazas de
-Resumen miden 28 de alto y muestran datos reales. No inventar puntuaciones.
+Resumen reservan su espacio desde el inicio y aparecen con cinco o más muestras,
+sin rejilla: 20 de alto durante la medición y 28 al terminar. Los datos pendientes
+usan un guion discreto; las cifras provisionales usan muted y los promedios terminados ink.
+No inventar puntuaciones.
 No disponible permanece explícito; un promedio terminado no se llama lectura en vivo.
 
 **BLOOM.** Preservar silueta, lámina posterior, pliegue frontal y lóbulo derecho.
@@ -322,7 +325,7 @@ Aplicar este checklist a cada vista individual. Marcar solo lo probado con
 evidencia; si un estado no corresponde a su tarea, registrar «No aplica» y el
 motivo. No heredar la aprobación de Resumen ni marcar funciones propuestas.
 
-- [ ] Carga: indicar qué ocurre; conservar progreso y cancelación cuando existan. En Resumen, publicar identidad, capacidad de RAM y unidades al obtenerlas; los recursos pendientes dicen «Midiendo…» y las trazas parciales indican cuántas muestras de diez han llegado y que el análisis sigue pendiente. Los promedios y hallazgos solo corresponden al diagnóstico terminado. Optimizar PC y Aplicar esperan al diagnóstico completo actual; cancelar o fallar descarta parciales. Si se conserva un resultado anterior, identificarlo como último análisis guardado y mantener Aplicar bloqueado hasta una nueva detección completa.
+- [ ] Carga: indicar qué ocurre; conservar progreso y cancelación cuando existan. En Resumen, publicar identidad, capacidad de RAM y unidades al obtenerlas. El panel «Analizando tu equipo» concentra el paso y la única barra de diagnóstico (ink sobre line); el pie no repite el estado. Bajo el equipo, «Midiendo… n/10 muestras»; las métricas pendientes usan un guion pequeño y las lecturas parciales muted. Las trazas aparecen desde cinco muestras conservando su espacio. Los promedios ink y hallazgos solo corresponden al diagnóstico terminado; memoria media superior al 90 % recibe contexto literal al terminar, nunca durante la medición. Optimizar PC y Aplicar esperan al diagnóstico completo actual, con «Disponible al terminar el análisis» visible; cancelar o fallar descarta parciales. Si se conserva un resultado anterior, identificarlo como último análisis guardado y mantener Aplicar bloqueado hasta una nueva detección completa.
 - [ ] Vacío: explicar por qué faltan datos y qué puede hacer el usuario, sin cifras ficticias.
 - [ ] Error: problema concreto, recuperación disponible y distinción de la acción principal.
 - [ ] Selección: contadores 0/1/varios correctos, disponibilidad y efectos visibles; preparar no aplica.
@@ -353,7 +356,7 @@ no equivale a una prueba manual con lector de pantalla ni a una medición de GPU
 
 ## Estado de adopción
 
-Fecha de revisión: **2026-10-16** (America/Santiago). Las secciones anteriores
+Fecha de revisión: **2026-10-17** (America/Santiago). Las secciones anteriores
 definen la especificación. Esta sección concentra qué está adoptado y qué falta;
 documentar una regla no acredita que esté activa ni que haya sido probada en UI.
 
@@ -362,6 +365,7 @@ documentar una regla no acredita que esté activa ni que haya sido probada en UI
 | Identidad y tokens | Source Serif 4, Lino, variantes claras/oscuras y brick están en los recursos. Los nombres WPF conservan los alias indicados abajo. |
 | Selección | Casillas, navegación y listas verificadas en XAML. Las filas de tabla conservan una marca lateral de 1 unidad al perder foco, además del relleno neutro; comprobadas mediante render WPF en claro, oscuro y alto contraste simulado. En alto contraste la marca usa Highlight del sistema. El relleno nunca es su único indicador. Revisión manual en alto contraste real pendiente. |
 | Resumen | Composición refinada y referencia de jerarquía. El PR 1 de datos tempranos publica identidad, capacidad de RAM y unidades durante la carga; «Midiendo… n/10» distingue las trazas parciales. Optimizar PC y Aplicar selección principal/manual esperan al diagnóstico completo actual. Cancelación y fallo descartan parciales; un análisis anterior se identifica literalmente y no habilita Aplicar. Verificación automatizada y capturas WPF; no equivale a recorrido manual. |
+| Carga de Resumen | Pulido del 2026-10-17: un panel de estado y barra ink/line, sin duplicación en el pie; guiones discretos, cifras parciales muted y trazas sin rejilla desde cinco muestras. Botón bloqueado legible y explicación completa. Durante la carga se aplazan los desplegables de detalles/productos no utilizables; vuelven al terminar. Scrollbar local con trazo de 4 y área de interacción de 14; ausente en carga a ambos tamaños. Doce renders simulados y geometría 0/5 comprobada; detalles en docs/ui-carga-resumen-2026-10-17.md. |
 | RAM y red | Refinada individualmente: dos columnas de lecturas, interpretación y procesos desplegables, una acción principal «Medir DNS» y «Actualizar detalles» secundaria. Se conservan Source Serif 4 y los tokens existentes. Títulos de sección 22/30, lecturas 24/32 con cifras tabulares, cuerpo 15/24 y metadatos 13/20; texto explicativo limitado a 620 unidades. Acción DNS y alcance completos a 1000×680. Estados vacío, pendiente, error local, progreso y cancelación comprobados con servicios simulados. |
 | Drivers | Actualizaciones primero: Buscar es principal mientras no haya ofertas; Descargar toma ese papel cuando hay resultados. El estado literal y los controles de Windows Update se conservan. Catálogo OEM, filtros, compatibilidad y fuentes oficiales siguen accesibles; búsqueda por modelo secundaria. Títulos 22/30 y secciones planas. |
 | Ajustes | Sin segundo wordmark. Apariencia en un grupo acotado y modo experto separado. Un único Aplicar selección manual fuera del desplazamiento, visible solo con el manual abierto. Temporales, recuperación y Deshacer conservan controles y confirmaciones. Copy distingue retirar de purgar. |
@@ -425,7 +429,23 @@ automáticas de uso manual; no acredita el arranque completo de producción.
 - [x] Recuperación simulada: batería existente, sin cambiar preflight ni journal.
 - [ ] Hover, foco, teclado completo, lector de pantalla y alto contraste reales: no recorridos manualmente.
 - [ ] Movimiento/reducir animaciones: validación manual pendiente; animación intacta.
-- [x] Alcance: PR 1 únicamente; PR 2, render y malla pendientes de autorización.
+- [x] Alcance de aquella entrega: PR 1 únicamente. PR 2 fue autorizado posteriormente y sigue pendiente de implementación mientras se atiende este pulido de interfaz. Render y malla siguen fuera de alcance.
+
+### Pulido de carga de Resumen · 2026-10-17
+
+Evidencia: `docs/ui-carga-resumen-2026-10-17.md`. Datos y servicios simulados;
+capturas de contenido WPF, sin marco nativo. No son mediciones del PC del usuario.
+
+- [x] Carga: 0/10 y 5/10, una barra ink con pista line y un solo paso; sin estado duplicado en el pie.
+- [x] Datos: marcador pequeño, cifras parciales muted, resultado ink y memoria alta contextualizada solo sobre 90 % al terminar. Exactamente 90 % y desconocido no muestran ese aviso.
+- [x] Trazas: invisibles antes de cinco muestras, espacio reservado y sin las tres líneas de rejilla. Métrica y acción conservan su posición entre 0/10 y 5/10.
+- [x] Acción: botón bloqueado sin pérdida de contraste por opacidad y explicación literal completa dentro del viewport en ambos tamaños.
+- [x] Claro/oscuro y tamaños: doce renders de 0/10, 5/10 y completo, a 1240×820 y 1000×680. Sin scroll durante la carga; desplazamiento disponible al completar para el contenido adicional.
+- [x] Contraste sobre BLOOM: mínimo del fondo bajo los tres metadatos, en las poses estáticas capturadas, 4,78:1 claro y 7,77:1 oscuro; no acredita toda la animación.
+- [x] Regresión: batería de interacción con servicios simulados, incluyendo error, cancelación, análisis consecutivos, selección y recuperación existentes. No se modifican motor ni BLOOM.
+- [ ] Hover/foco, teclado completo, lector de pantalla y alto contraste reales: no recorridos manualmente en esta entrega.
+- [ ] Movimiento, transición completa de producción y escalado DPI del sistema: sin validación manual; no inferirlos de capturas estáticas.
+- Recuperación real y rendimiento de producción: no aplica a este cambio visual; siguen pendientes por separado. No se atribuye mejora de velocidad al PC.
 
 ### Verificación de RAM y red · 2026-10-16
 

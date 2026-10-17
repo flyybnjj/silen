@@ -12,11 +12,12 @@ using System.Diagnostics;
 namespace Silen.App;
 
 
-internal static class InteractionSmokeChecks
+internal static partial class InteractionSmokeChecks
 {
     public static async Task<IReadOnlyList<string>> RunAsync(string directory, Dispatcher dispatcher)
     {
         var checks = new List<string>();
+        await RunSummaryLoadingPresentationChecksAsync(directory, dispatcher, checks);
         await RunEarlyScanChecksAsync(directory, dispatcher, checks);
         await RunRemainingViewChecksAsync(directory, checks);
         await RunUnfocusedTableSelectionChecksAsync(directory, checks);

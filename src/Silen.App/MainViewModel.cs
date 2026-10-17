@@ -210,7 +210,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public bool IsClosing => lifetime.IsStopping;
     public bool CanStartOperation => !IsBusy && !IsClosing && !AppUpdate.IsRestarting;
     public bool CanApplyChanges => CanStartOperation && HasCompletedResult && snapshotIsCurrent;
-    public string DiagnosticApplyNotice => IsScanning ? "Midiendo… Al terminar podrás preparar y aplicar ajustes." : !snapshotIsCurrent ? "Completa la detección del equipo antes de aplicar ajustes." : "";
+    public string DiagnosticApplyNotice => IsScanning ? "Disponible al terminar el análisis" : !snapshotIsCurrent ? "Completa la detección del equipo antes de aplicar ajustes." : "";
     public bool HasSnapshot => snapshot is not null;
     public bool HasNotes => snapshot?.Notes.Count > 0;
     public bool HasFindings => Findings.Count > 0;
@@ -316,8 +316,23 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string GpuTemperature => ResourceValue(s => s.GpuTemperature, " °C");
     public string MemoryDetail => DisplayMachine?.TotalMemoryGb > 0 ? $"{Labels.Number(DisplayMachine.TotalMemoryGb, " GB", 1)} instalados" : IsScanning && scanMachine is null ? "Midiendo capacidad…" : "Capacidad no disponible";
     public string DriveDetail => (IsScanning ? scanDrives : snapshot?.Drives) is not { } drives ? IsScanning ? "Midiendo unidades…" : "Unidades no disponibles" : drives.Count == 0 ? "Unidades no disponibles" : string.Join(" · ", drives.Select(drive => $"{drive.Name} {Labels.Number(drive.FreeGb, " GB", 1)} libres de {Labels.Number(drive.TotalGb, " GB", 1)}"));
-    public string SampleDetail => IsScanning ? $"Midiendo… {liveSamples.Count}/10 muestras · última lectura; análisis pendiente" : snapshot is null ? "Se tomarán muestras durante unos segundos." : $"{SpanishText.Count(snapshot.Samples.Count, "muestra", "muestras")} · promedio de esta observación";
+    public string SampleDetail => IsScanning ? $"Midiendo… {liveSamples.Count}/10 muestras" : snapshot is null ? "Se tomarán muestras durante unos segundos." : $"{SpanishText.Count(snapshot.Samples.Count, "muestra", "muestras")} · promedio de esta observación";
     public string MetricSampleLabel => IsScanning ? "Midiendo… última muestra; análisis pendiente" : "Promedio de muestras válidas";
+    public bool HasSummarySamples => DisplaySamples.Count > 0;
+    public bool ShowSummaryTraces => DisplaySamples.Count >= 5;
+    public string SummaryCpuValue => IsScanning && !HasSummarySamples ? "—" : CpuValue;
+    public string SummaryMemoryValue => IsScanning && !HasSummarySamples ? "—" : MemoryValue;
+    public string SummaryGpuValue => IsScanning && !HasSummarySamples ? "—" : GpuValue;
+    public string SummaryCpuTemperature => IsScanning && !HasSummarySamples ? "—" : CpuTemperature;
+    public string SummaryGpuTemperature => IsScanning && !HasSummarySamples ? "—" : GpuTemperature;
+    public bool HasHighMemoryObservation => HasCompletedResult && Mean(sample => sample.MemoryPercent) > 90;
+    public string SummaryScanStep => ScanStage switch
+    {
+        "Equipo" => "Leyendo sistema y procesador…", "Unidades" => "Leyendo unidades…",
+        "Dispositivos" => "Leyendo dispositivos…", "Actividad" => "Leyendo inicio, procesos y red…",
+        "Sensores" => "Preparando lecturas…", "Recursos" => "Observando CPU, memoria y gráficos…",
+        _ => "Preparando el análisis…"
+    };
     private IReadOnlyList<MetricSample> DisplaySamples => IsScanning ? liveSamples : snapshot?.Samples ?? [];
     public IReadOnlyList<double?> CpuTrace => DisplaySamples.Select(s => s.CpuPercent).ToList();
     public IReadOnlyList<double?> MemoryTrace => DisplaySamples.Select(s => s.MemoryPercent).ToList();
