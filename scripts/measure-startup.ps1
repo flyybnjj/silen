@@ -32,7 +32,8 @@ foreach ($startupTrial in 1..$Repetitions) {
     }
 }
 $startupSummary = @{}
-foreach ($startupMark in @('WindowShown','Identity','RamCapacity','Drives','BasicsVisibleLayout','FirstSample','TenSamples','CompleteSnapshot','AllStartupWork')) {
+foreach ($startupMark in @('WindowShown','Identity','RamCapacity','Drives','FirstInformationVisibleLayout','BasicsVisibleLayout','FirstSample','TenSamples','CompleteSnapshot','AllStartupWork')) {
+    if (@($startupRows | Where-Object { $null -eq $_.Result.Milestones.$startupMark }).Count -gt 0) { continue }
     $startupValues = @($startupRows | ForEach-Object { $_.Result.Milestones.$startupMark / 1000 } | Sort-Object)
     $startupSummary[$startupMark] = @{ Median=$startupValues[[int][Math]::Floor($startupValues.Count/2)]; Min=$startupValues[0]; Max=$startupValues[-1] }
 }

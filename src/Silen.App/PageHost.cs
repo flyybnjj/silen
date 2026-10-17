@@ -14,7 +14,14 @@ public sealed class PageHost : TabControl
     protected override void OnSelectionChanged(SelectionChangedEventArgs e)
     {
         base.OnSelectionChanged(e);
-        UIElementAutomationPeer.FromElement(this)?.InvalidatePeer();
+        // TabControl actualiza su ContentPresenter después de este evento.
+        // Invalidar antes puede conservar los controles de la vista anterior.
+        _ = Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() =>
+        {
+            var peer = UIElementAutomationPeer.FromElement(this);
+            peer?.ResetChildrenCache();
+            peer?.InvalidatePeer();
+        }));
     }
 
     private sealed class PageHostAutomationPeer(PageHost owner) : FrameworkElementAutomationPeer(owner)

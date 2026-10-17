@@ -102,7 +102,7 @@ public sealed class ParallelInventoryTests
             finally { Interlocked.Decrement(ref callbacks); }
         }));
         Assert.Equal(1, peakCallbacks);
-        Assert.Equal(Enumerable.Range(1, 14), progress.Select(step => step.CompletedSteps).Distinct());
+        Assert.Equal(Enumerable.Range(0, 15), progress.Select(step => step.CompletedSteps).Distinct());
         Assert.Contains(result.Notes, note => note.StartsWith("Drivers:") && note.Contains("UnauthorizedAccessException"));
         Assert.Contains(result.Notes, note => note.StartsWith("Dispositivos PnP:") && note.Contains("COMException"));
         Assert.Equal(10, result.Samples.Count);

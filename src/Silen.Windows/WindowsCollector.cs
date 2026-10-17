@@ -37,6 +37,10 @@ public sealed class WindowsCollector
 
     private SystemSnapshot Collect(IProgress<string>? progress, CancellationToken token, IProgress<ScanProgress>? detailedProgress)
     {
+        token.ThrowIfCancellationRequested();
+        // Publicar antes de cualquier consulta WMI o inspección de servicios.
+        detailedProgress?.Report(new ScanProgress("Equipo", "Modelo, procesador y memoria disponibles. Completando el inventario…", 0, 14,
+            Machine: BasicMachineReader.Read()));
         var snapshot = new SystemSnapshot();
         var updateHealth = new NativeOptimizationService().ReadWindowsUpdateStatus();
         snapshot = snapshot with { WindowsUpdate = updateHealth };

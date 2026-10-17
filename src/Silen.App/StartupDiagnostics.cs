@@ -55,7 +55,7 @@ internal sealed class StartupDiagnostics : IDisposable
     private void OnModel(object? sender, PropertyChangedEventArgs args)
     {
         if (model is null) return;
-        if (model.IsScanning && model.HasResourceData) Mark("Identity");
+        if (model.HasMachineIdentity) Mark("Identity");
         if (model.MemoryDetail.Contains("instalados")) Mark("RamCapacity");
         if (model.DriveDetail.Contains("libres de")) Mark("Drives");
         if (model.MemoryTrace.Count > 0) Mark("FirstSample");
@@ -67,6 +67,9 @@ internal sealed class StartupDiagnostics : IDisposable
     private void CheckVisibility()
     {
         if (chrome is null || chrome.Opacity < .98) return;
+        lock (gate)
+            if (milestones.ContainsKey("Identity") && milestones.ContainsKey("RamCapacity") && !milestones.ContainsKey("FirstInformationVisibleLayout"))
+            { chrome.UpdateLayout(); Mark("FirstInformationVisibleLayout"); }
         lock (gate)
             if (!milestones.ContainsKey("Identity") || !milestones.ContainsKey("RamCapacity") || !milestones.ContainsKey("Drives") || milestones.ContainsKey("BasicsVisibleLayout")) return;
         chrome.UpdateLayout(); Mark("BasicsVisibleLayout");

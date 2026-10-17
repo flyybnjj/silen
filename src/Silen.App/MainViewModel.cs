@@ -301,12 +301,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     };
     public string Observation => snapshot is null ? "Aún no hay un análisis guardado." : $"Último análisis: {snapshot.CapturedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm", Labels.Culture)}";
     private MachineInfo? DisplayMachine => IsScanning ? scanMachine : snapshot?.Machine;
+    internal bool HasMachineIdentity => DisplayMachine is { } machine &&
+        (!string.IsNullOrWhiteSpace(machine.Manufacturer) || !string.IsNullOrWhiteSpace(machine.Model) || !string.IsNullOrWhiteSpace(machine.ProductName));
     public string MachineTitle => DisplayMachine is not { } machine ? IsScanning ? "Midiendo…" : "Diagnóstico del equipo" : Labels.Known(string.Join(" ", new[] { machine.Manufacturer, string.IsNullOrWhiteSpace(machine.ProductName) ? machine.Model : machine.ProductName }.Where(s => !string.IsNullOrWhiteSpace(s))));
     public string DeviceKindLabel => DisplayMachine?.DeviceKind switch { DeviceKind.Laptop => "Portátil", DeviceKind.Desktop => "Escritorio", _ => "Tipo de equipo desconocido" };
     public string DeviceIdentity => DisplayMachine is not { } machine ? IsScanning ? "Midiendo identidad del equipo…" : "El tipo de equipo y el modelo aparecerán al analizar." : $"{DeviceKindLabel} · Modelo {Labels.Known(machine.Model)} · SKU {Labels.Known(machine.SystemSku)}";
     public string MachineSubtitle => DisplayMachine is not { } machine ? IsScanning ? "Midiendo sistema…" : "Windows · análisis local" : $"{Labels.Known(machine.OsName)} · {Labels.Known(machine.OsVersion)}";
-    public string CpuName => IsScanning && scanMachine is null ? "Midiendo procesador…" : Labels.Known(DisplayMachine?.CpuName);
-    public string GpuName => IsScanning && scanMachine is null ? "Midiendo gráficos…" : Labels.Known(DisplayMachine?.GpuName);
+    public string CpuName => IsScanning && string.IsNullOrWhiteSpace(scanMachine?.CpuName) ? "Midiendo procesador…" : Labels.Known(DisplayMachine?.CpuName);
+    public string GpuName => IsScanning && string.IsNullOrWhiteSpace(scanMachine?.GpuName) ? "Midiendo gráficos…" : Labels.Known(DisplayMachine?.GpuName);
     private string ResourceValue(Func<MetricSample, double?> selector, string unit) => IsScanning && liveSamples.Count == 0 ? "Midiendo…" : Labels.Number(Value(selector), unit);
     public string CpuValue => ResourceValue(s => s.CpuPercent, "%");
     public string MemoryValue => ResourceValue(s => s.MemoryPercent, "%");
@@ -314,7 +316,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string LiveSummary => $"CPU {CpuValue} · Memoria {MemoryValue} · GPU {GpuValue}";
     public string CpuTemperature => ResourceValue(s => s.CpuTemperature, " °C");
     public string GpuTemperature => ResourceValue(s => s.GpuTemperature, " °C");
-    public string MemoryDetail => DisplayMachine?.TotalMemoryGb > 0 ? $"{Labels.Number(DisplayMachine.TotalMemoryGb, " GB", 1)} instalados" : IsScanning && scanMachine is null ? "Midiendo capacidad…" : "Capacidad no disponible";
+    public string MemoryDetail => DisplayMachine?.TotalMemoryGb > 0 ? $"{Labels.Number(DisplayMachine.TotalMemoryGb, " GB", 1)} instalados" : IsScanning ? "Midiendo capacidad…" : "Capacidad no disponible";
     public string DriveDetail => (IsScanning ? scanDrives : snapshot?.Drives) is not { } drives ? IsScanning ? "Midiendo unidades…" : "Unidades no disponibles" : drives.Count == 0 ? "Unidades no disponibles" : string.Join(" · ", drives.Select(drive => $"{drive.Name} {Labels.Number(drive.FreeGb, " GB", 1)} libres de {Labels.Number(drive.TotalGb, " GB", 1)}"));
     public string SampleDetail => IsScanning ? $"Midiendo… {liveSamples.Count}/10 muestras" : snapshot is null ? "Se tomarán muestras durante unos segundos." : $"{SpanishText.Count(snapshot.Samples.Count, "muestra", "muestras")} · promedio de esta observación";
     public string MetricSampleLabel => IsScanning ? "Midiendo… última muestra; análisis pendiente" : "Promedio de muestras válidas";
@@ -394,8 +396,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         using var initialization = StartupDiagnostics.Measure("InitializeAsync");
         using (StartupDiagnostics.Measure("PreferencesAndHistory"))
-            await RunBusyAsync("Preparando Silen…", async token => { await RefreshHistoryAsync(); await Settings.LoadAsync(token); Status = "Preparando la información de tu equipo…"; });
+            await RunBusyAsync("Preparando Silen…", async token => { await Settings.LoadAsync(token); if (!autoScan) await RefreshHistoryAsync(); Status = "Preparando la información de tu equipo…"; });
         if (autoScan && !startupAttempted && !IsClosing) await ScanAtStartupAsync();
+        // El análisis correcto ya guarda y carga el historial. Si falla, cargarlo
+        // ahora sin haberlo puesto por delante de los primeros datos del equipo.
+        if (autoScan && !HasSnapshot && !IsClosing) await RunBusyAsync("Leyendo historial…", _ => RefreshHistoryAsync());
         if (!IsClosing) { using var tools = StartupDiagnostics.Measure("Tools"); await Tools.RefreshAsync(); }
         if (!IsClosing) { using var update = StartupDiagnostics.Measure("WindowsUpdate"); await WindowsUpdate.RefreshAsync(); }
         if (autoScan && !IsClosing) { using var profiles = StartupDiagnostics.Measure("Profiles"); await applicationTimer.StartAsync(); Settings.RefreshTimerProfiles(); }

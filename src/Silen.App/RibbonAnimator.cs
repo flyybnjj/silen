@@ -180,12 +180,14 @@ internal sealed class RibbonAnimator : IDisposable
         artwork.RenderFrame(!captureMode && ReducedMotion ? 0 : phase);
         blur.Radius = frame.BlurRadius;
         artwork.Opacity = frame.ArtworkOpacity;
-        veil.Opacity = frame.VeilOpacity;
+        // La legibilidad está disponible desde el primer fotograma. La mascota
+        // conserva su transformación, opacidad, desenfoque y cadencia.
+        veil.Opacity = .75;
         scale.ScaleX = scale.ScaleY = .62 + .40 * frame.BackdropBlend;
         translation.X = Math.Max(0, window.ActualWidth) * .18 * frame.BackdropBlend;
         translation.Y = Math.Max(0, window.ActualHeight) * .04 * frame.BackdropBlend;
-        content.Opacity = frame.ContentOpacity;
-        content.IsHitTestVisible = frame.ContentOpacity >= .98;
+        content.Opacity = 1;
+        content.IsHitTestVisible = true;
         RenderedFrames++;
         LastRenderMilliseconds = Stopwatch.GetElapsedTime(began).TotalMilliseconds;
         MaximumRenderMilliseconds = Math.Max(MaximumRenderMilliseconds, LastRenderMilliseconds);

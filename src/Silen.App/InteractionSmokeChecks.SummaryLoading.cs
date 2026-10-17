@@ -34,7 +34,7 @@ internal static partial class InteractionSmokeChecks
                 throw new InvalidOperationException("Los contenedores sin acción no deben añadir paradas de Tab antes del botón principal.");
             model.SelectedPage = 1; await window.Dispatcher.InvokeAsync(window.UpdateLayout, DispatcherPriority.ContextIdle);
             if (root.GetName() != "Contenido de RAM y red" || !Descendants(root).Any(peer => peer.GetName() == "Medir DNS"))
-                throw new InvalidOperationException("El árbol accesible debe actualizar nombre y controles al cambiar de vista.");
+                throw new InvalidOperationException($"El árbol accesible debe actualizar nombre y controles al cambiar de vista. Nombre={root.GetName()}, selección={window.Pages.SelectedIndex}, controles={string.Join(" | ", Descendants(root).Select(peer => peer.GetName()).Where(name => !string.IsNullOrEmpty(name)).Take(15))}");
             checks.Add("El contenedor de vistas expone la acción de Resumen en UI Automation sin pestañas visuales duplicadas");
         }
         finally { await model.PrepareToCloseAsync(); window.Close(); }

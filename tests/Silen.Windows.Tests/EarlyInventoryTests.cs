@@ -6,6 +6,28 @@ namespace Silen.Windows.Tests;
 public sealed class EarlyInventoryTests
 {
     [Fact]
+    public async Task Basic_identity_is_published_before_the_first_potentially_slow_WMI_query()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var progress = new List<ScanProgress>();
+        var collector = new WindowsCollector((_, token) =>
+        {
+            Assert.NotEmpty(progress);
+            var basic = progress[0];
+            Assert.NotNull(basic.Machine);
+            Assert.Equal(0, basic.CompletedSteps);
+            Assert.Null(basic.Sample);
+            Assert.True(basic.Machine.LogicalCores > 0);
+            cancellation.Cancel();
+            token.ThrowIfCancellationRequested();
+            return [];
+        });
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => collector.CollectAsync(cancellationToken: cancellation.Token,
+            detailedProgress: new Immediate(progress.Add)));
+        Assert.DoesNotContain(progress, step => step.Sample is not null);
+    }
+
+    [Fact]
     public async Task Basics_are_published_before_driver_inventory_and_cancellation_returns_no_snapshot()
     {
         using var cancellation = new CancellationTokenSource();
@@ -14,7 +36,7 @@ public sealed class EarlyInventoryTests
         {
             if (query.Contains("Win32_PnPSignedDriver"))
             {
-                Assert.Equal("Equipo de prueba", progress.First().Machine?.Manufacturer);
+                Assert.Equal("Equipo de prueba", progress.Last(step => step.Machine is not null).Machine?.Manufacturer);
                 Assert.Equal("C:", Assert.Single(progress.Last(step => step.Drives is not null).Drives!).Name);
                 cancellation.Cancel(); token.ThrowIfCancellationRequested();
             }

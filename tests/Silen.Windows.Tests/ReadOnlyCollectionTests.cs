@@ -16,11 +16,11 @@ public sealed class ReadOnlyCollectionTests(ITestOutputHelper output)
         var elapsed = Stopwatch.StartNew();
         var progress = new List<ScanProgress>();
         var snapshot = await new WindowsCollector().CollectAsync(cancellationToken: cancellation.Token, detailedProgress: new ImmediateProgress<ScanProgress>(progress.Add));
-        Assert.Equal(Enumerable.Range(1, 14), progress.Select(step => step.CompletedSteps).Distinct());
+        Assert.Equal(Enumerable.Range(0, 15), progress.Select(step => step.CompletedSteps).Distinct());
         Assert.All(progress, step => Assert.Equal(14, step.TotalSteps));
         // El inventario puede terminar antes o después de las primeras muestras.
         Assert.Null(progress.First().Sample);
-        Assert.Same(snapshot.Machine, progress.First().Machine);
+        Assert.Same(snapshot.Machine, progress.Last(step => step.Machine is not null).Machine);
         var units = Assert.Single(progress, step => step.Drives is not null);
         Assert.Equal(snapshot.Drives, units.Drives);
         Assert.True(progress.IndexOf(units) < progress.FindIndex(step => step.CompletedSteps == 2));
