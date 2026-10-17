@@ -6,10 +6,12 @@ namespace Silen.Windows;
 internal sealed record OptimizationValueChange(string Kind, string Key, string Name, RegistryValueState Previous, RegistryValueState Intended);
 internal sealed class OptimizationJournalEntry
 {
+    [JsonRequired]
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string ToolId { get; set; } = "";
     public string Title { get; set; } = "";
     public DateTimeOffset AppliedAt { get; set; }
+    [JsonRequired]
     public string State { get; set; } = "Pending";
     public List<OptimizationValueChange> Values { get; set; } = [];
 }
@@ -20,7 +22,7 @@ internal sealed class OptimizationJournal
     private readonly string directory;
     private readonly OptimizationAuthority authority;
     internal IReadOnlyList<OptimizationJournalEntry> UntrustedLegacyEntries { get; private set; } = [];
-    private static readonly JsonSerializerOptions Options = new() { WriteIndented = true, Converters = { new JsonStringEnumConverter() } };
+    private static readonly JsonSerializerOptions Options = new() { WriteIndented = true, RespectRequiredConstructorParameters = true, Converters = { new JsonStringEnumConverter() } };
     private static readonly JsonSerializerOptions CompactOptions = new(Options) { WriteIndented = false };
 
     internal OptimizationJournal(string directory, OptimizationAuthority authority = OptimizationAuthority.User)
@@ -74,19 +76,26 @@ internal sealed class OptimizationJournal
         {
             var file = new FileInfo(path);
             if (file.Length > MaximumBytes) throw new InvalidDataException("El respaldo de mejoras supera 16 MiB. Se conservó íntegro; no se aplicarán nuevos cambios hasta revisar su almacenamiento.");
-            var entries = JsonSerializer.Deserialize<List<OptimizationJournalEntry>>(await File.ReadAllTextAsync(path, token), Options);
+            var text = await File.ReadAllTextAsync(path, token);
+            using var document = JsonDocument.Parse(text);
+            var entries = document.RootElement.Deserialize<List<OptimizationJournalEntry>>(Options);
             if (entries is null || entries.Any(x => x is null)) throw new InvalidDataException("Respaldo de mejoras incompleto.");
             var ids = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var entry in entries)
+            for (var index = 0; index < entries.Count; index++)
             {
+                var entry = entries[index];
                 if (!Guid.TryParseExact(entry.Id, "N", out _) || !ids.Add(entry.Id) || string.IsNullOrWhiteSpace(entry.Title) ||
                     entry.State is not ("Pending" or "Completed" or "Partial" or "UndoPending" or "Undone") ||
                     entry.Values is null || entry.Values.Count is 0 or > 16)
                     throw new InvalidDataException("Respaldo de mejoras incompatible.");
                 var targets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var value in entry.Values)
+                for (var valueIndex = 0; valueIndex < entry.Values.Count; valueIndex++)
                 {
+                    var value = entry.Values[valueIndex];
                     Validate(entry.ToolId, value);
+                    var serialized = document.RootElement[index].GetProperty("Values")[valueIndex];
+                    DemandRecordedNumber(value.Previous, serialized.GetProperty("Previous"));
+                    DemandRecordedNumber(value.Intended, serialized.GetProperty("Intended"));
                     if (!targets.Add(value.Kind + "\0" + value.Key + "\0" + value.Name))
                         throw new InvalidDataException("El respaldo contiene destinos duplicados.");
                 }
@@ -107,6 +116,15 @@ internal sealed class OptimizationJournal
             return entries;
         }
         catch (JsonException ex) { throw new InvalidDataException("El respaldo de mejoras está dañado. Se conservó para recuperación.", ex); }
+    }
+
+    private static void DemandRecordedNumber(RegistryValueState state, JsonElement serialized)
+    {
+        // Un cero omitido no acredita que ese fuera el valor original. Los
+        // respaldos de ausencia solo necesitan Exists:false y siguen válidos.
+        if (state.Exists && state.Kind is Microsoft.Win32.RegistryValueKind.DWord or Microsoft.Win32.RegistryValueKind.QWord &&
+            !serialized.TryGetProperty("Number", out _))
+            throw new InvalidDataException("El respaldo omite el valor numérico original o previsto. Se conservó sin aplicar cambios.");
     }
 
     internal async Task WriteAsync(List<OptimizationJournalEntry> entries, CancellationToken token, bool addingEntry = false,
