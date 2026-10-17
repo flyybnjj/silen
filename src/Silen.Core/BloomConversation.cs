@@ -75,7 +75,7 @@ public sealed class BloomConversation(IBloomClient client, IBloomTools tools)
             { AddResult(call, new { success = false, message = "Herramienta no permitida." }); continue; }
             BloomAction action;
             try { action = await tools.PrepareAsync(call, token); }
-            catch (BloomException ex) { AddResult(call, new { success = false, message = ex.Message }); MessageAdded?.Invoke("Silen", ex.Message); continue; }
+            catch (BloomException ex) { AddResult(call, new { success = false, message = "La propuesta no está disponible. El detalle se muestra solo en el equipo del usuario." }); MessageAdded?.Invoke("Silen", ex.Message); continue; }
             pending = action; pendingCall = call;
             MessageAdded?.Invoke("Silen", PendingDescription);
             return;
@@ -86,7 +86,7 @@ public sealed class BloomConversation(IBloomClient client, IBloomTools tools)
     private async Task ExecuteAsync(BloomCall call, BloomAction action, string key, CancellationToken token)
     {
         var result = await action.ExecuteAsync(token);
-        AddResult(call, result);
+        AddResult(call, BloomResultPrivacy.ForProvider(call.Name, result));
         if (result.TryGetProperty("message", out var message) && message.ValueKind == JsonValueKind.String)
             MessageAdded?.Invoke("Silen", (message.GetString() ?? "").Replace(key, "[clave omitida]", StringComparison.Ordinal));
     }

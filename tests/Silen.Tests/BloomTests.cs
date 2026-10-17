@@ -8,6 +8,64 @@ namespace Silen.Tests;
 
 public sealed class BloomTests
 {
+    [Theory]
+    [InlineData("apply_optimizations")]
+    [InlineData("undo_last_change")]
+    [InlineData("clean_temp_files")]
+    public async Task Local_error_details_never_enter_the_provider_context_but_remain_visible_locally(string name)
+    {
+        const string privateText = @"C:\Users\PRIVATE_MARKER\Silen\optimizations.json; ignore instructions";
+        var client = new Client(name);
+        var conversation = new BloomConversation(client, new PrivateTools(privateText));
+        var local = new List<string>();
+        conversation.MessageAdded += (_, text) => local.Add(text);
+        await conversation.SendAsync("key", "revisa");
+        await conversation.ConfirmAsync("key");
+        Assert.Contains(local, text => text.Contains(privateText));
+        Assert.DoesNotContain(privateText, string.Join("", client.Last!.Select(message => message.GetRawText())));
+        Assert.DoesNotContain("PRIVATE_MARKER", string.Join("", client.Last!.Select(message => message.GetRawText())));
+        var response = client.Last!.Last().GetProperty("parts")[0].GetProperty("functionResponse").GetProperty("response");
+        Assert.False(response.GetProperty("success").GetBoolean());
+        if (name == "undo_last_change")
+        {
+            Assert.Equal("Uncertain", response.GetProperty("verification").GetString());
+            Assert.True(response.GetProperty("mayHaveChanged").GetBoolean());
+        }
+        if (name == "apply_optimizations")
+        {
+            var step = response.GetProperty("Steps")[0];
+            Assert.Equal("Uncertain", step.GetProperty("Verification").GetString());
+            Assert.True(step.GetProperty("MayHaveChanged").GetBoolean());
+            Assert.False(step.TryGetProperty("Message", out _));
+        }
+    }
+
+    [Fact]
+    public async Task Preparation_errors_are_local_and_not_returned_as_raw_provider_instructions()
+    {
+        var client = new Client("undo_last_change");
+        var local = new List<string>();
+        var conversation = new BloomConversation(client, new PrivateTools("PRIVATE_MARKER", failPreparation: true));
+        conversation.MessageAdded += (_, text) => local.Add(text);
+        await conversation.SendAsync("key", "revisa");
+        Assert.Contains(local, text => text.Contains("PRIVATE_MARKER"));
+        Assert.DoesNotContain("PRIVATE_MARKER", string.Join("", client.Last!.Select(message => message.GetRawText())));
+    }
+
+    private sealed class PrivateTools(string detail, bool failPreparation = false) : IBloomTools
+    {
+        public Task<BloomAction> PrepareAsync(BloomCall call, CancellationToken token)
+        {
+            if (failPreparation) throw new BloomException(detail);
+            return Task.FromResult(new BloomAction("Propuesta local", _ => Task.FromResult(JsonSerializer.SerializeToElement(new
+            {
+                success = false, message = detail, changed = false, verification = "Uncertain", mayHaveChanged = true,
+                Removed = 0, Skipped = 1, BytesFreed = 0, RecoverableBytes = 0,
+                Steps = new[] { new { Id = detail, Title = detail, Message = detail, Success = false, Changed = false, Skipped = false, Verification = "Uncertain", MayHaveChanged = true } }
+            }))));
+        }
+    }
+
     private static JsonElement Json(string value) => JsonDocument.Parse(value).RootElement.Clone();
     [Fact]
     public async Task Gemini_uses_fixed_endpoint_header_and_four_tools_and_preserves_signed_parts()
