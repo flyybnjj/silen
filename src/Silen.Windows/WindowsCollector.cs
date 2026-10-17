@@ -12,15 +12,27 @@ namespace Silen.Windows;
 public sealed class WindowsCollector
 {
     private readonly Func<string, CancellationToken, IEnumerable<Dictionary<string, object?>>> readRows;
+    private readonly TimeSpan scanBudget;
 
     public WindowsCollector() : this(ReadRows) { }
 
-    internal WindowsCollector(Func<string, CancellationToken, IEnumerable<Dictionary<string, object?>>> readRows) => this.readRows = readRows;
+    internal WindowsCollector(Func<string, CancellationToken, IEnumerable<Dictionary<string, object?>>> readRows, TimeSpan? scanBudget = null)
+    {
+        this.readRows = readRows;
+        this.scanBudget = scanBudget ?? TimeSpan.FromSeconds(35);
+        if (this.scanBudget <= TimeSpan.Zero || this.scanBudget > TimeSpan.FromMinutes(2)) throw new ArgumentOutOfRangeException(nameof(scanBudget));
+    }
 
-    public Task<SystemSnapshot> CollectAsync(IProgress<string>? progress = null, CancellationToken cancellationToken = default, IProgress<ScanProgress>? detailedProgress = null)
+    public async Task<SystemSnapshot> CollectAsync(IProgress<string>? progress = null, CancellationToken cancellationToken = default, IProgress<ScanProgress>? detailedProgress = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return Task.Run(() => Collect(progress, cancellationToken, detailedProgress), cancellationToken);
+        using var budget = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        budget.CancelAfter(scanBudget);
+        try { return await Task.Run(() => Collect(progress, budget.Token, detailedProgress), budget.Token).ConfigureAwait(false); }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested && budget.IsCancellationRequested)
+        {
+            throw new TimeoutException("El análisis superó su presupuesto de tiempo. No se publicó un resultado incompleto; puedes volver a intentarlo.");
+        }
     }
 
     private SystemSnapshot Collect(IProgress<string>? progress, CancellationToken token, IProgress<ScanProgress>? detailedProgress)
@@ -38,10 +50,51 @@ public sealed class WindowsCollector
         // La copia no comparte la lista mutable que continúa construyendo el diagnóstico.
         detailedProgress?.Report(new ScanProgress("Unidades", "Capacidad y espacio libre leídos. Midiendo el resto del equipo…", 1, 14,
             Drives: Array.AsReadOnly(snapshot.Drives.ToArray())));
+        using var workers = CancellationTokenSource.CreateLinkedTokenSource(token);
+        token = workers.Token;
+        var completedSteps = 1;
+        var progressGate = new object();
+        void Report(string stage, string detail, MetricSample? sample)
+        {
+            // Ambos productores usan una secuencia única, sin callbacks concurrentes.
+            lock (progressGate)
+            {
+                token.ThrowIfCancellationRequested();
+                detailedProgress?.Report(new ScanProgress(stage, detail, ++completedSteps, 14, sample));
+            }
+        }
+        // Un trabajador de inventario más la observación actual: máximo dos tareas.
+        // Cada uno es dueño de sus listas/notas; solo se unen al terminar ambos.
+        var inventory = Task.Run(() => Inventory(token, Report), token);
+        try
+        {
+            Observe(snapshot, progress, token, Report);
+            var devices = inventory.GetAwaiter().GetResult();
+            token.ThrowIfCancellationRequested();
+            snapshot.Drivers.AddRange(devices.Drivers);
+            snapshot.Startup.AddRange(devices.Startup);
+            snapshot.Processes.AddRange(devices.Processes);
+            snapshot.Networks.AddRange(devices.Networks);
+            snapshot.Notes.AddRange(devices.Notes);
+            progress?.Report("Análisis de hardware finalizado.");
+            return snapshot;
+        }
+        catch
+        {
+            workers.Cancel();
+            // No dejar un proveedor huérfano al cancelar/fallar la observación.
+            // La excepción original sigue siendo el resultado de esta operación.
+            try { inventory.GetAwaiter().GetResult(); } catch (Exception) { }
+            throw;
+        }
+    }
+
+    private SystemSnapshot Inventory(CancellationToken token, Action<string, string, MetricSample?> report)
+    {
+        var snapshot = new SystemSnapshot();
         snapshot.Drivers.AddRange(Drivers(snapshot.Notes, token));
-        detailedProgress?.Report(new ScanProgress("Dispositivos", "Unidades y controladores instalados leídos.", 2, 14));
+        report("Dispositivos", "Controladores y dispositivos instalados leídos.", null);
         token.ThrowIfCancellationRequested();
-        progress?.Report("Leyendo inicio, procesos y red…");
         snapshot.Startup.AddRange(Startup(snapshot.Notes, token));
         TryProvider("Procesos", snapshot.Notes, () =>
         {
@@ -66,11 +119,16 @@ public sealed class WindowsCollector
             }
         });
 
-        detailedProgress?.Report(new ScanProgress("Actividad", "Inicio, procesos y adaptadores de red leídos.", 3, 14));
+        report("Actividad", "Inicio, procesos y adaptadores de red leídos.", null);
+        return snapshot;
+    }
+
+    private static void Observe(SystemSnapshot snapshot, IProgress<string>? progress, CancellationToken token, Action<string, string, MetricSample?> report)
+    {
         token.ThrowIfCancellationRequested();
         using var sensors = new HardwareSensors(snapshot.Notes, snapshot.Machine.IsAdministrator);
         NativeMetrics.CpuTimes? previous = NativeMetrics.ReadCpuTimes();
-        detailedProgress?.Report(new ScanProgress("Sensores", "Observación de recursos preparada con los sensores accesibles.", 4, 14));
+        report("Sensores", "Observación de recursos preparada con los sensores accesibles.", null);
         for (var index = 0; index < 10; index++)
         {
             progress?.Report($"Observando recursos: muestra {index + 1} de 10…");
@@ -88,15 +146,13 @@ public sealed class WindowsCollector
                 GpuPercent = sensor.GpuPercent
             };
             snapshot.Samples.Add(sample);
-            detailedProgress?.Report(new ScanProgress("Recursos", $"Muestra {index + 1} de 10 recibida.", index + 5, 14, sample));
+            report("Recursos", $"Muestra {index + 1} de 10 recibida.", sample);
             previous = current;
         }
         if (snapshot.Samples.Any(s => s.CpuPercent is null)) snapshot.Notes.Add("CPU: Windows no entregó alguna lectura de uso; queda como desconocida.");
         if (snapshot.Samples.Any(s => s.MemoryPercent is null)) snapshot.Notes.Add("Memoria: Windows no entregó alguna lectura de uso; queda como desconocida.");
         if (snapshot.Samples.All(s => s.CpuTemperature is null)) snapshot.Notes.Add("Temperatura CPU no disponible. Algunos sensores requieren un controlador y permisos adicionales; el análisis básico funciona sin elevación.");
         if (snapshot.Samples.All(s => s.GpuTemperature is null)) snapshot.Notes.Add("Temperatura GPU no disponible en los sensores accesibles.");
-        progress?.Report("Análisis de hardware finalizado.");
-        return snapshot;
     }
 
     private MachineInfo Machine(List<string> notes, CancellationToken token)
