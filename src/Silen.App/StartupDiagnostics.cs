@@ -83,6 +83,7 @@ internal sealed class StartupDiagnostics : IDisposable
             Origin = "Milisegundos desde Process.StartTime, con un offset UTC inicial y reloj monotónico para las fases; visibilidad exige contenido visible, carga de Bloom retirada, opacidad ≥0,98 y layout, no presentación GPU.",
             Milestones = milestones, Phases = phases, Profiles = model.Settings.TimerProfiles.Count,
             GithubFailed = model.AppUpdate.HasError, Samples = model.Snapshot?.Samples.Count,
+            AutomaticMemoryAvailable = model.RamNetwork.HasMemory, AutomaticMemoryProcessCount = model.RamNetwork.Processes.Count,
             SampleTimes = model.Snapshot?.Samples.Select(sample => sample.At).ToArray() };
         await using var stream = new FileStream(Path.Combine(directory, "startup.json"), FileMode.CreateNew, FileAccess.Write, FileShare.Read);
         await JsonSerializer.SerializeAsync(stream, result, Silen.Core.ReportStore.JsonOptions);

@@ -9,7 +9,7 @@ internal static class ThemeManager
 {
     private static bool initialized;
     internal static event Action? ThemeApplied;
-    private static string preferred = "Claro";
+    private static string preferred = "Oscuro";
     internal static void Initialize()
     {
         if (initialized) return;
@@ -39,12 +39,12 @@ internal static class ThemeManager
         }
         var palette = new Dictionary<string, string>
         {
-            ["Ink"] = dark ? "#191A18" : "#F4F2EC", ["Panel"] = dark ? "#21221F" : "#F4F2EC",
-            ["Raised"] = dark ? "#2B2C28" : "#EAE8E2", ["Line"] = dark ? "#45473F" : "#CFCEC9",
+            ["Ink"] = dark ? "#151614" : "#F4F2EC", ["Panel"] = dark ? "#1D1F1B" : "#FCFBF7",
+            ["Raised"] = dark ? "#252821" : "#ECEBE5", ["Line"] = dark ? "#45473F" : "#CFCEC9",
             ["ControlLine"] = dark ? "#808276" : "#848580", ["Text"] = dark ? "#F0EEE7" : "#292B27",
-            ["Muted"] = dark ? "#BCBDB4" : "#595A55", ["Accent"] = dark ? "#EA8B80" : "#B23B35",
+            ["Muted"] = dark ? "#C5C8BC" : "#4C5047", ["Accent"] = dark ? "#EA8B80" : "#B23B35",
             ["Selection"] = dark ? "#363832" : "#E0DED8", ["Hover"] = dark ? "#2E302B" : "#ECEAE4",
-            ["ScrollThumb"] = dark ? "#8B8D80" : "#ABAAA5", ["White"] = dark ? "#191A18" : "#F4F2EC"
+            ["ScrollThumb"] = dark ? "#61675B" : "#A1A497", ["White"] = dark ? "#151614" : "#F4F2EC"
         };
         var resources = Application.Current.Resources;
         foreach (var item in palette) resources[item.Key] = Brush(item.Value);

@@ -18,11 +18,12 @@ public sealed class RamNetworkViewModel : ObservableObject
 {
     private readonly ViewModelServices sources;
     private readonly Func<string, Func<CancellationToken, Task>, Task<bool>> run;
+    private readonly SemaphoreSlim detailsGate = new(1, 1);
     private readonly List<MemoryObservation> samples = [];
     private MemoryObservation? current;
     private bool? automaticPagefile;
     private string dnsStatus = "Aún no hay mediciones DNS.", memoryStatus = "Actualiza los detalles para revisar procesos y paginación.";
-    private string memoryError = "", dnsError = "";
+    private string readingError = "", pagefileError = "", processesError = "", dnsError = "";
     private bool measuring, refreshing, dnsAttempted;
     private int generation;
     internal RamNetworkViewModel(ViewModelServices sources, Func<string, Func<CancellationToken, Task>, Task<bool>> run, Func<bool> canRun)
@@ -40,10 +41,10 @@ public sealed class RamNetworkViewModel : ObservableObject
     public bool HasProcesses => Processes.Count > 0;
     public bool HasDnsRows => DnsRows.Count > 0;
     public string DnsEmptyMessage => dnsAttempted ? "No se obtuvieron resultados. Puedes repetir la medición." : "Sin mediciones todavía. Pulsa Medir DNS para comparar los servidores.";
-    public bool HasMemoryError => memoryError.Length > 0;
+    public bool HasMemoryError => MemoryError.Length > 0;
     public bool HasDnsError => dnsError.Length > 0;
     public bool IsRefreshing => refreshing;
-    public string MemoryError => memoryError;
+    public string MemoryError => string.Join(" ", new[] { readingError, pagefileError, processesError }.Where(error => error.Length > 0));
     public string DnsError => dnsError;
     public string AssessmentLabel => Assessment.Pressure ? "Presión de memoria sostenida · ver detalles" : "Interpretar estas lecturas";
     public string PhysicalMemoryValue => current is null ? "No disponible" : $"{GiB(current.TotalBytes - current.AvailableBytes)} / {GiB(current.TotalBytes)} GiB";
@@ -56,9 +57,34 @@ public sealed class RamNetworkViewModel : ObservableObject
     public string DnsStatus => dnsStatus;
     public bool IsMeasuring => measuring;
     public string MeasurementTime => current?.At?.ToLocalTime().ToString("HH:mm:ss", Labels.Culture) is { } time ? "Lectura " + time : "Esperando una lectura real";
+    internal void InitializeReading()
+    {
+        if (current is null) UpdateLive();
+    }
+    internal void ApplyCurrentSnapshot(SystemSnapshot snapshot)
+    {
+        SetProcesses(snapshot.Processes);
+        processesError = "";
+        UpdateLive();
+    }
     internal void UpdateLive()
     {
-        current = sources.ReadMemory(automaticPagefile);
+        readingError = "";
+        try
+        {
+            current = sources.ReadMemory(automaticPagefile);
+            if (current is not { TotalBytes: > 0, AvailableBytes: >= 0, CommitBytes: >= 0, CommitLimitBytes: > 0 } ||
+                current.AvailableBytes > current.TotalBytes || current.CommitBytes > current.CommitLimitBytes)
+            {
+                current = null;
+                readingError = "No se pudo obtener una lectura actual de los contadores de memoria. Se volverá a intentar automáticamente.";
+            }
+        }
+        catch (Exception ex)
+        {
+            current = null;
+            readingError = "No se pudieron leer los contadores de memoria. " + ex.Message;
+        }
         if (current is null) samples.Clear();
         else
         {
@@ -67,27 +93,57 @@ public sealed class RamNetworkViewModel : ObservableObject
         }
         Changed(null);
     }
-    internal Task<bool> RefreshAsync() => run("Revisando RAM, procesos y paginación…", async token =>
+    internal Task<bool> RefreshAsync() => run("Revisando RAM, procesos y paginación…", RefreshDetailsCoreAsync);
+    internal async Task RefreshDetailsCoreAsync(CancellationToken token)
     {
-        refreshing = true; memoryError = ""; Changed(null);
+        await detailsGate.WaitAsync(token);
+        refreshing = true; pagefileError = ""; processesError = ""; Changed(null);
         try
         {
-            automaticPagefile = await sources.ReadAutomaticPagefile(token);
-            var processes = await sources.ReadMemoryProcesses(token); token.ThrowIfCancellationRequested();
-            Processes.Clear(); foreach (var process in processes) Processes.Add(process);
             UpdateLive();
-            memoryStatus = processes.Count == 0 ? "No se obtuvieron procesos en esta lectura. Puedes actualizar los detalles para reintentar."
-                : "Memoria de trabajo por proceso. Las páginas compartidas pueden contarse en más de un proceso; no sumes la columna como uso total de RAM. No se cerró ninguna aplicación.";
+            await Task.WhenAll(ReadPagefileAsync(token), ReadProcessesAsync(token));
+            token.ThrowIfCancellationRequested();
+            UpdateLive();
         }
         catch (OperationCanceledException) { memoryStatus = "Actualización cancelada. Los detalles anteriores pueden estar desactualizados."; throw; }
+        finally { refreshing = false; detailsGate.Release(); Changed(null); Changed(nameof(MemoryStatus)); }
+    }
+    private async Task ReadPagefileAsync(CancellationToken token)
+    {
+        try
+        {
+            var result = await sources.ReadAutomaticPagefile(token);
+            token.ThrowIfCancellationRequested();
+            automaticPagefile = result;
+            pagefileError = result is null ? "No se pudo comprobar la configuración de paginación. Windows no devolvió ese dato." : "";
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex) { automaticPagefile = null; pagefileError = "No se pudo comprobar la paginación. " + ex.Message; }
+        Changed(null);
+    }
+    private async Task ReadProcessesAsync(CancellationToken token)
+    {
+        try
+        {
+            var processes = await sources.ReadMemoryProcesses(token);
+            token.ThrowIfCancellationRequested();
+            SetProcesses(processes);
+        }
+        catch (OperationCanceledException) { throw; }
         catch (Exception ex)
         {
-            current = null; automaticPagefile = null; samples.Clear(); Processes.Clear();
-            memoryError = "No se pudieron leer los detalles de memoria. " + ex.Message;
-            memoryStatus = "Actualiza los detalles para volver a intentarlo.";
+            Processes.Clear();
+            processesError = "No se pudieron leer los procesos por memoria. " + ex.Message;
+            memoryStatus = "Los procesos no están disponibles. Puedes actualizar los detalles para reintentar.";
         }
-        finally { refreshing = false; Changed(null); Changed(nameof(MemoryStatus)); }
-    });
+        Changed(null);
+    }
+    private void SetProcesses(IReadOnlyList<Silen.Core.ProcessInfo> processes)
+    {
+        Processes.Clear(); foreach (var process in processes) Processes.Add(process);
+        memoryStatus = processes.Count == 0 ? "No se obtuvieron procesos en esta lectura. Puedes actualizar los detalles para reintentar."
+            : "Memoria de trabajo por proceso. Las páginas compartidas pueden contarse en más de un proceso; no sumes la columna como uso total de RAM. No se cerró ninguna aplicación.";
+    }
     internal Task<bool> MeasureAsync() => run("Midiendo consultas DNS reales…", async token =>
     {
         DnsRows.Clear(); dnsError = ""; measuring = true; dnsAttempted = true; var thisGeneration = ++generation; Changed(null);

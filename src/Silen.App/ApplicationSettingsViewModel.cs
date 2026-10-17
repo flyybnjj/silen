@@ -13,7 +13,7 @@ public sealed class ApplicationSettingsViewModel : ObservableObject
     private readonly IApplicationTimerService timers;
     private readonly Func<string, Func<CancellationToken, Task>, Task<bool>> run;
     private bool expert, manual;
-    private string theme = "Claro";
+    private string theme = "Oscuro";
     private readonly Action<string> applyTheme;
     private string status = "El modo experto muestra controles individuales. Activarlo no modifica Windows.";
     internal ApplicationSettingsViewModel(IUserPreferencesStore store, IApplicationTimerService timers, Func<string, Func<CancellationToken, Task>, Task<bool>> run, Func<bool> canRun, Action<string>? applyTheme = null)

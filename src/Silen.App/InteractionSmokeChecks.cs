@@ -17,6 +17,8 @@ internal static partial class InteractionSmokeChecks
     public static async Task<IReadOnlyList<string>> RunAsync(string directory, Dispatcher dispatcher)
     {
         var checks = new List<string>();
+        await RunAutomaticMemoryChecksAsync(directory, dispatcher, checks);
+        await RunRealUsePresentationChecksAsync(directory, checks);
         await RunBloomWorkflowChecksAsync(directory, checks);
         await RunStartupDiagnosticsChecksAsync(directory, checks);
         await RunSummaryAccessibilityChecksAsync(directory, checks);
@@ -1470,8 +1472,8 @@ internal static partial class InteractionSmokeChecks
             CheckUniversal(VisibleText(ramView, true).Contains(model.RamNetwork.Assessment.Message), "El detalle conserva la recomendación completa y las advertencias de paginación");
             interpretation.IsExpanded = false;
             detailsFail = true; await model.RamNetwork.RefreshAsync();
-            CheckUniversal(model.RamNetwork.HasMemoryError && !model.RamNetwork.HasMemory && !model.RamNetwork.HasProcesses && !model.HasError,
-                "Un fallo de detalles retira las lecturas obsoletas y se explica dentro de RAM y red sin duplicar el aviso global");
+            CheckUniversal(model.RamNetwork.HasMemoryError && model.RamNetwork.HasMemory && !model.RamNetwork.HasProcesses && !model.HasError,
+                "Un fallo de procesos conserva RAM válida y se explica dentro de RAM y red sin duplicar el aviso global");
             await RenderFixtureWindowAsync(window, Path.Combine(directory, "ram-red-error-memoria.png"));
             detailsFail = false; await model.RamNetwork.RefreshAsync();
             resolverFails = true; await model.RamNetwork.MeasureAsync();

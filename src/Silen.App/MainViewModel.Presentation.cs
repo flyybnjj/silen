@@ -5,6 +5,14 @@ namespace Silen.App;
 public sealed partial class MainViewModel
 {
     private bool initializing, startupLoading, startupIdentityRead, pcDialogOpen;
+    private TaskCompletionSource startupReady = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    internal Task StartupPresentationReady => startupReady.Task;
+    internal bool StartupCancelled { get; private set; }
+    internal void CancelStartup()
+    {
+        StartupCancelled = true;
+        if (CancelCommand.CanExecute(null)) CancelCommand.Execute(null);
+    }
     public BloomActivityViewModel Activity { get; } = new();
     public bool ShowStartupLoading => startupLoading;
     public bool IsManualDialogOpen => Settings.ShowManual;
@@ -16,11 +24,13 @@ public sealed partial class MainViewModel
     internal void BeginStartupPresentation()
     {
         startupLoading = true; startupIdentityRead = false; Changed(nameof(ShowStartupLoading));
+        startupReady = new(TaskCreationOptions.RunContinuationsAsynchronously); StartupCancelled = false;
     }
     private void EndStartupPresentation()
     {
         if (!startupLoading) return;
         startupLoading = false; Changed(nameof(ShowStartupLoading));
+        startupReady.TrySetResult();
     }
     private void OpenPcDialog()
     {

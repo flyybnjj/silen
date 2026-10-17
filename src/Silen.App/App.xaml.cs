@@ -85,14 +85,31 @@ public partial class App : Application
             }
 
             var model = new MainViewModel(startupArgs.FirstOrDefault() == "--smoke-test" ? Path.Combine(Path.GetFullPath(startupArgs[1]), "history") : null);
-            var window = new MainWindow(model, animateStartup: startupArgs.Length == 0 || driverMode);
+            var automaticStart = startupArgs.Length == 0 || driverMode;
+            Task? startupUpdate = null;
+            Task initialization;
+            if (automaticStart)
+            {
+                model.BeginStartupPresentation();
+                using (var splash = new BloomSplashWindow(model.CancelStartup))
+                {
+                    splash.Show();
+                    startupUpdate = StartupDiagnostics.TrackAsync("GitHub", model.StartAppUpdateCheckAsync);
+                    initialization = model.InitializeAsync(autoScan: true);
+                    await model.StartupPresentationReady;
+                    if (model.StartupCancelled)
+                    {
+                        await initialization; await model.PrepareToCloseAsync(); Shutdown(0); return;
+                    }
+                }
+            }
+            else initialization = model.InitializeAsync(autoScan: false);
+            var window = new MainWindow(model, animateStartup: automaticStart);
             MainWindow = window;
-            window.Closed += (_, _) => { if (startupArgs.Length == 0 || driverMode) Shutdown(0); };
+            window.Closed += (_, _) => { if (automaticStart) Shutdown(0); };
             window.Show();
             startupDiagnostics?.Observe(model, window);
-            Task? startupUpdate = null;
-            if (startupArgs.Length == 0 || driverMode) startupUpdate = StartupDiagnostics.TrackAsync("GitHub", model.StartAppUpdateCheckAsync);
-            await model.InitializeAsync(autoScan: startupArgs.Length == 0 || driverMode);
+            await initialization;
             if (startupDiagnostics is not null && (startupArgs.Length == 0 || driverMode))
             {
                 if (startupUpdate is not null) await startupUpdate;

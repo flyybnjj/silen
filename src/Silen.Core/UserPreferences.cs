@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace Silen.Core;
 
-public sealed record UserPreferences(bool ExpertMode = false, string Theme = "Claro");
+public sealed record UserPreferences(bool ExpertMode = false, string Theme = "Oscuro");
 public interface IUserPreferencesStore
 {
     Task<UserPreferences> ReadAsync(CancellationToken token = default);

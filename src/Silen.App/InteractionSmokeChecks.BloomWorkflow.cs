@@ -137,6 +137,7 @@ internal static partial class InteractionSmokeChecks
             Collect = async (_, token, detailed) => { progress = detailed; entered.TrySetResult(); await release.Task.WaitAsync(token); return snapshot; },
             FindOem = (_, _, _) => Task.FromResult(new OemSupportResult(false, "Prueba", "", "", [], "Sin catálogo", false))
         });
+        model.BeginStartupPresentation();
         var window = new MainWindow(model, animateStartup: true) { ShowActivated = false, ShowInTaskbar = false, Left = -10000, Top = -10000 };
         window.Show(); var initialization = model.InitializeAsync(true);
         try

@@ -15,7 +15,6 @@ public partial class MainWindow : Window
     public MainWindow(MainViewModel model, bool animateStartup = false)
     {
         this.model = model;
-        if (animateStartup && !model.HasSnapshot) model.BeginStartupPresentation();
         ThemeManager.Initialize();
         InitializeComponent();
         DataContext = model;
@@ -25,7 +24,7 @@ public partial class MainWindow : Window
         {
             if (!IsVisible || !IsActive || WindowState == WindowState.Minimized) return;
             model.PcOptimization.RefreshTimerStatus(); if (model.SelectedPage == 3) model.Settings.RefreshTimerProfiles();
-            if (IsActive && model.SelectedPage == 1 && model.CanStartOperation) model.RamNetwork.UpdateLive();
+            if (model.SelectedPage == 1 && !model.IsClosing && !model.AppUpdate.IsRestarting) model.RamNetwork.UpdateLive();
         }, Dispatcher);
         Closing += HandleClosing;
         PreviewKeyDown += HandleDialogKey;

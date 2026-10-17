@@ -3,20 +3,20 @@ name: Silen Lino
 description: Una herramienta tranquila para revisar y ajustar un PC.
 colors:
   linen: "#F4F2EC"
-  panel: "#F4F2EC"
+  panel: "#FCFBF7"
   ink: "#292B27"
   brick: "#B23B35"
-  muted: "#595A55"
+  muted: "#4C5047"
   line: "#CFCEC9"
   control-line: "#848580"
-  raised: "#EAE8E2"
+  raised: "#ECEBE5"
   selection: "#E0DED8"
-  dark-background: "#191A18"
-  dark-panel: "#21221F"
+  dark-background: "#151614"
+  dark-panel: "#1D1F1B"
   dark-selection: "#363832"
-  dark-raised: "#2B2C28"
+  dark-raised: "#252821"
   dark-text: "#F0EEE7"
-  dark-muted: "#BCBDB4"
+  dark-muted: "#C5C8BC"
   dark-line: "#45473F"
   dark-control-line: "#808276"
   dark-brick: "#EA8B80"
@@ -58,7 +58,7 @@ typography:
     lineHeight: "20px"
   small:
     fontFamily: "Source Serif 4"
-    fontSize: "13px"
+    fontSize: "14px"
     fontWeight: 400
     lineHeight: "20px"
 rounded:
@@ -140,18 +140,18 @@ dark-* del frontmatter.
 
 | Token | Claro | Oscuro | Pareja evaluada | Ratio claro / oscuro |
 | --- | --- | --- | --- | --- |
-| linen | #F4F2EC | #191A18 | ink sobre linen | 12,77:1 / 15,05:1 |
-| panel / dark-panel | #F4F2EC | #21221F | ink sobre panel | 12,77:1 / 13,77:1 |
-| ink | #292B27 | #F0EEE7 | ink sobre linen | 12,77:1 / 15,05:1 |
-| muted | #595A55 | #BCBDB4 | muted sobre linen | 6,21:1 / 9,21:1 |
-| line | #CFCEC9 | #45473F | line frente a linen | 1,41:1 / 1,85:1 |
-| raised | #EAE8E2 | #2B2C28 | ink sobre raised | 11,67:1 / 12,11:1 |
+| linen | #F4F2EC | #151614 | ink sobre linen | 12,77:1 / 15,64:1 |
+| panel / dark-panel | #FCFBF7 | #1D1F1B | ink sobre panel | 13,80:1 / 14,31:1 |
+| ink | #292B27 | #F0EEE7 | ink sobre linen | 12,77:1 / 15,64:1 |
+| muted | #4C5047 | #C5C8BC | muted sobre linen | 7,37:1 / 10,69:1 |
+| line | #CFCEC9 | #45473F | line frente a linen | 1,41:1 / 1,92:1 |
+| raised | #ECEBE5 | #252821 | ink sobre raised | 11,97:1 / 12,88:1 |
 | selection / dark-selection | #E0DED8 | #363832 | ink sobre selection | 10,63:1 / 10,23:1 |
-| brick | #B23B35 | #EA8B80 | texto de botón sobre brick | 5,25:1 / 7,07:1 |
-| control-line | #848580 | #808276 | borde frente a linen | 3,32:1 / 4,47:1 |
+| brick | #B23B35 | #EA8B80 | texto de botón sobre brick | 5,25:1 / 7,35:1 |
+| control-line | #848580 | #808276 | borde frente a linen | 3,32:1 / 4,64:1 |
 
-panel es la superficie de controles y ayudas emergentes: coincide con linen en
-claro y se separa del fondo en oscuro mediante dark-panel. selection es el relleno
+panel es una superficie opaca de lectura y controles: se separa de linen en ambos
+temas. La apariencia inicial es Oscuro (grafito); Claro conserva la variante Lino. selection es el relleno
 neutro de selección en listas, tablas y campos; su variante es dark-selection.
 Ambos pares existen en los recursos WPF Panel y Selection. Sus ratios evalúan el
 texto sobre la superficie, no la diferencia de luminosidad entre superficies.
@@ -216,7 +216,8 @@ La detección comienza al abrir. Sin datos se muestra una explicación breve; si
 falla, Reintentar. No repetir Analizar en todas las vistas. Conservar orden de
 lectura y teclado al adaptar cada tarea.
 
-Al abrir, Bloom ocupa la carga hasta recibir la identidad enriquecida del equipo
+Al abrir, una ventana compacta y transparente muestra únicamente a Bloom volando,
+sin frases, tarjeta, fondo ni marco. Espera la identidad enriquecida del equipo
 (marca, modelo y tipo), CPU, RAM y la primera muestra de sensores. Una temperatura
 inaccesible se muestra como «No disponible»; no se espera indefinidamente un sensor.
 Entonces aparece Resumen y continúa la observación de diez muestras. Los datos
@@ -561,3 +562,20 @@ anterior. La animación acompaña trabajo real; no garantiza una mejora del PC.
 
 - [x] Compilación y entrega: 692 unitarias correctas (una OEM omitida), 267 comprobaciones WPF en fuentes y repetidas en el portable; 33 archivos del escritorio verificados por SHA-256.
 - [x] Arranque normal del portable, tres repeticiones: Resumen tras primera muestra 2,476 [2,446–2,537] s; diagnóstico completo 12,084 [12,082–12,139] s. Son hitos de layout y de diagnóstico, no una medición GPU ni una promesa para otros equipos. Las tareas iniciales completas varían 14,911–31,919 s; continúan tras revelar Resumen.
+
+
+### Corrección de uso real y rediseño · 2026-10-17
+
+El rechazo del usuario sustituye la tarjeta de inicio y la presentación anterior.
+Evidencia y límites en `docs/rediseno-y-ram-2026-10-17.md`.
+
+- La carga inicial usa `BloomSplashWindow`: 280×240, transparente, sin texto, marco ni botón visual. Escape cancela; al terminar se abre la ventana principal.
+- Grafito es la apariencia inicial para nuevas preferencias. Las elecciones guardadas conservan su valor. Source Serif 4 se mantiene; metadatos 14, cuerpo 15 y formateo Display.
+- Los datos usan superficies opacas Panel; Bloom sigue en ambiente y no se usa para pintar el fondo de las lecturas. La tabla de tokens recoge la paleta vigente.
+- RAM se lee antes del diagnóstico y se actualiza al abrir su vista aunque el análisis u OEM sigan ocupados. Fallos de procesos o paginación no borran RAM válida.
+- Los detalles adicionales de RAM son una operación independiente: cancelarlos conserva explícitamente el diagnóstico terminado y omite más consultas.
+- Scroll de 4 unidades visibles con zona de arrastre nativa; rueda por píxeles de 140 ms, sin animación adicional con reducir movimiento, respetando tablas virtualizadas. Arrastrar o usar teclado interrumpe la transición.
+- Manual y PC incluyen búsqueda y categoría. Filtrar no borra la selección ni cambia la confirmación; una categoría transitoria nula vuelve a Todas. La selección manual vacía no ocupa el inicio del diálogo.
+- [x] Casos automáticos de RAM, errores por fuente, cancelación, semáforo, transparencia, poses distintas, filtros y rueda nativa.
+- [x] Capturas de las seis vistas en ambos temas y tamaños, con servicios simulados para acciones del sistema.
+- [ ] Recorrido humano completo de teclado/lector de pantalla, DPI, alto contraste y sensación de desplazamiento: no acreditados por estas pruebas.

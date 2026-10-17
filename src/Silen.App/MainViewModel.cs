@@ -287,7 +287,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             if (!Set(ref selectedPage, value)) return;
             Changed(nameof(PageTitle)); Changed(nameof(PageDescription));
-            if (value == 1 && CanStartOperation) RamNetwork.UpdateLive();
+            if (selectedPage == 1 && !IsClosing && !AppUpdate.IsRestarting) RamNetwork.UpdateLive();
             if (value == 5) Bloom.LoadConfiguration();
             if (value == 3) Settings.RefreshTimerProfiles();
         }
@@ -417,10 +417,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     private async Task InitializeCoreAsync(bool autoScan)
     {
+        RamNetwork.InitializeReading();
         using var initialization = StartupDiagnostics.Measure("InitializeAsync");
         using (StartupDiagnostics.Measure("PreferencesAndHistory"))
             await RunBusyAsync("Preparando Silen…", async token => { await Settings.LoadAsync(token); if (!autoScan) await RefreshHistoryAsync(); Status = "Preparando la información de tu equipo…"; });
+        if (StartupCancelled) return;
         if (autoScan && !startupAttempted && !IsClosing) await ScanAtStartupAsync();
+        if (StartupCancelled) return;
         // El análisis correcto ya guarda y carga el historial. Si falla, cargarlo
         // ahora sin haberlo puesto por delante de los primeros datos del equipo.
         if (autoScan && !HasSnapshot && !IsClosing) await RunBusyAsync("Leyendo historial…", _ => RefreshHistoryAsync());
@@ -465,6 +468,16 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         });
         if (completed && !IsClosing)
         {
+            var diagnosisStatus = Status;
+            var diagnosisError = Error;
+            var memoryCompleted = await RunBusyAsync("Leyendo detalles de RAM…", RamNetwork.RefreshDetailsCoreAsync);
+            if (!memoryCompleted)
+            {
+                Status = "Análisis completado. La lectura adicional de RAM no terminó; se conservan los datos del diagnóstico y puedes actualizar los detalles.";
+                return true;
+            }
+            Status = diagnosisStatus;
+            if (!string.IsNullOrWhiteSpace(diagnosisError)) Error = diagnosisError;
             var savedStatus = Status;
             var savedError = Error;
             var lookedUp = await SearchOemAsync(false);
@@ -480,6 +493,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (value.Machine is not null) scanMachine = value.Machine;
         if (value.Drives is not null) scanDrives = value.Drives;
         if (value.Sample is not null) liveSamples.Add(value.Sample);
+        if (value.Sample is not null) RamNetwork.InitializeReading();
         if (value.Machine is not null && value.CompletedSteps >= 1) startupIdentityRead = true;
         if (startupIdentityRead && liveSamples.Count > 0) EndStartupPresentation();
         Changed(null);
@@ -489,6 +503,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         if (isCurrent && result.WindowsUpdate is { } updateHealth) WindowsUpdate.SetHealth(updateHealth);
         snapshot = result;
+        if (isCurrent) RamNetwork.ApplyCurrentSnapshot(result);
         EndStartupPresentation();
         snapshotIsCurrent = isCurrent;
         Findings = RecommendationEngine.Analyze(result).OrderByDescending(f => f.Severity).Select(f => new FindingRow(f)).ToList();

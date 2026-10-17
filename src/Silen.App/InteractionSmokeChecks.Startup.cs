@@ -10,6 +10,7 @@ internal static partial class InteractionSmokeChecks
     {
         using (var model = new MainViewModel(Path.Combine(directory, "first-frame"), new ViewModelServices { CreateNativeTools = () => new FixtureOptimizationService() }))
         {
+            model.BeginStartupPresentation();
             var window = new MainWindow(model, animateStartup: true);
             try
             {
