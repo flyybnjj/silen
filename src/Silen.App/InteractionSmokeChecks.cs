@@ -456,7 +456,7 @@ internal static partial class InteractionSmokeChecks
         check(!model.AppUpdate.IsWorking && !model.AppUpdate.HasError && !model.AppUpdate.IsReady && !string.IsNullOrWhiteSpace(model.AppUpdate.Status) && model.AppUpdate.InstalledVersion.Split('.').Length == 3 && !model.AppUpdate.RestartCommand.CanExecute(null), "App update starts idle with a status and installed version, without offering restart");
         await model.StartAppUpdateCheckAsync();
         check(!model.AppUpdate.IsReady && !model.AppUpdate.HasError && model.AppUpdate.Status.Contains("actualizada"), "Verified no-update result reports current version without offering restart");
-        updater.Offer = new(new Version(9, 0, 0), "v9.0.0", "https://github.com/flyybnjj/flyyoptimizer/releases/download/v9.0.0/Silen-win-x64.zip", 100, new string('a', 64));
+        updater.Offer = new(new Version(9, 0, 0), "v9.0.0", "https://github.com/flyybnjj/silen/releases/download/v9.0.0/Silen-win-x64.zip", 100, new string('a', 64));
         updater.BlockDownload = true;
         var downloading = model.StartAppUpdateCheckAsync();
         await updater.DownloadStarted.Task;

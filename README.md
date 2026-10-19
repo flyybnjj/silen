@@ -6,9 +6,9 @@ Aplicación de escritorio en español para **Windows 11 x64**, desarrollada en *
 
 ## Descargar
 
-El portable de Silen se genera como `artifacts/Silen-win-x64.zip` al ejecutar `scripts/build.ps1`. Las versiones publicadas están en [las releases del repositorio](https://github.com/flyybnjj/flyyoptimizer/releases); comprueba el nombre del paquete antes de descargarlo.
+El portable de Silen se genera como `artifacts/Silen-win-x64.zip` al ejecutar `scripts/build.ps1`. Las versiones publicadas están en [las releases del repositorio](https://github.com/flyybnjj/silen/releases); comprueba el nombre del paquete antes de descargarlo.
 
-Extrae todo el ZIP y abre **Silen.exe**. Conserva la carpeta **Archivos** junto al ejecutable. También puedes consultar [las releases](https://github.com/flyybnjj/flyyoptimizer/releases).
+Extrae todo el ZIP y abre **Silen.exe**. Conserva la carpeta **Archivos** junto al ejecutable. También puedes consultar [las releases](https://github.com/flyybnjj/silen/releases).
 
 ## Funciones
 
@@ -98,14 +98,14 @@ Las actualizaciones se aplican desde una sesión normal de Silen. Si la abriste 
 
 **Cambio de nombre:** si utilizas FlyyOptimizer 1.0 o 1.1.0, extrae el portable de Silen en una carpeta nueva y abre `Silen.exe`. El actualizador antiguo exige el nombre anterior y no puede instalar directamente un ZIP de Silen. Los accesos directos anteriores deben apuntar al nuevo ejecutable. Las siguientes actualizaciones de Silen usarán `Silen-win-x64.zip`.
 
-El repositorio conserva su dirección `flyybnjj/flyyoptimizer`. Es un identificador externo real; el cambio de marca local no renombra el repositorio ni publica una release.
+El repositorio oficial es `flyybnjj/silen` (antes `flyybnjj/flyyoptimizer`). El cambio de nombre en GitHub no publica una release nueva. Los clientes anteriores pueden requerir actualización manual porque el actualizador valida la dirección exacta y no sigue redirecciones de la API.
 
 ## Compilar desde el código
 
 Requisitos de desarrollo: **Windows 11 x64**, **Git** y **SDK .NET 10**.
 
 ```powershell
-git clone https://github.com/flyybnjj/flyyoptimizer.git Silen
+git clone https://github.com/flyybnjj/silen.git Silen
 cd Silen
 .\scripts\build.ps1
 .\scripts\run.ps1

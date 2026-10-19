@@ -11,7 +11,7 @@ internal static class TestSigningKey
     internal static string PublicKey => Key.ExportSubjectPublicKeyInfoPem();
     internal static byte[] Manifest(AppRelease release, ECDsa? signingKey = null)
     {
-        var payload = JsonSerializer.SerializeToUtf8Bytes(new { schemaVersion = 1, repository = "flyybnjj/flyyoptimizer", tag = release.Tag, asset = "Silen-win-x64.zip", size = release.Size, sha256 = release.Sha256.ToUpperInvariant() });
+        var payload = JsonSerializer.SerializeToUtf8Bytes(new { schemaVersion = 1, repository = "flyybnjj/silen", tag = release.Tag, asset = "Silen-win-x64.zip", size = release.Size, sha256 = release.Sha256.ToUpperInvariant() });
         byte[] signature;
         lock (Key) signature = (signingKey ?? Key).SignData(payload, HashAlgorithmName.SHA256, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
         return JsonSerializer.SerializeToUtf8Bytes(new { payload = Convert.ToBase64String(payload), signature = Convert.ToBase64String(signature) });
@@ -20,7 +20,7 @@ internal static class TestSigningKey
 
 public sealed class AppUpdateSignatureTests
 {
-    private static readonly AppRelease Release = new(new Version(1, 2, 0, 0), "v1.2.0", "https://github.com/flyybnjj/flyyoptimizer/releases/download/v1.2.0/Silen-win-x64.zip", 42, new string('A', 64));
+    private static readonly AppRelease Release = new(new Version(1, 2, 0, 0), "v1.2.0", "https://github.com/flyybnjj/silen/releases/download/v1.2.0/Silen-win-x64.zip", 42, new string('A', 64));
     [Fact]
     public void Valid_publisher_signature_accepts_exact_release() => AppUpdateSignature.Verify(TestSigningKey.Manifest(Release), Release, TestSigningKey.PublicKey);
     [Fact]

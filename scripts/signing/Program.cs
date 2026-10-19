@@ -38,7 +38,7 @@ try
     if (size is <= 0 or > 512L * 1024 * 1024) throw new InvalidDataException("Tamaño de ZIP no permitido.");
     string sha256;
     using (var file = File.OpenRead(zip)) sha256 = Convert.ToHexString(SHA256.HashData(file));
-    var expectedPayload = JsonSerializer.SerializeToUtf8Bytes(new { schemaVersion = 1, repository = "flyybnjj/flyyoptimizer", tag, asset = "Silen-win-x64.zip", size, sha256 });
+    var expectedPayload = JsonSerializer.SerializeToUtf8Bytes(new { schemaVersion = 1, repository = "flyybnjj/silen", tag, asset = "Silen-win-x64.zip", size, sha256 });
     using var trusted = ECDsa.Create();
     trusted.ImportFromPem(File.ReadAllText(publicPath));
     if (trusted.KeySize != 256) throw new InvalidDataException("La clave pública debe ser ECDSA P-256.");

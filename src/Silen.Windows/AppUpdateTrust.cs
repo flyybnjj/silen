@@ -6,7 +6,7 @@ namespace Silen.Windows;
 internal static partial class AppUpdateTrust
 {
     internal const string AssetName = "Silen-win-x64.zip";
-    internal const string ApiRoot = "https://api.github.com/repos/flyybnjj/flyyoptimizer/releases/";
+    internal const string ApiRoot = "https://api.github.com/repos/flyybnjj/silen/releases/";
     internal const long MaxArchiveBytes = 512L * 1024 * 1024;
     internal static AppRelease Parse(ReadOnlyMemory<byte> json)
     {
@@ -26,7 +26,7 @@ internal static partial class AppUpdateTrust
             var digest = asset.GetProperty("digest").GetString() ?? "";
             var url = asset.GetProperty("browser_download_url").GetString() ?? "";
             if (size <= 0 || size > MaxArchiveBytes || !DigestPattern().IsMatch(digest) ||
-                url != $"https://github.com/flyybnjj/flyyoptimizer/releases/download/{tag}/{AssetName}") throw Invalid();
+                url != $"https://github.com/flyybnjj/silen/releases/download/{tag}/{AssetName}") throw Invalid();
             return new(version, tag, url, size, digest[7..].ToUpperInvariant());
         }
         catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException or FormatException or OverflowException)
@@ -42,7 +42,7 @@ internal static partial class AppUpdateTrust
     {
         if (ParseVersion(release.Tag) != Normalize(release.Version) || release.Size <= 0 || release.Size > MaxArchiveBytes ||
             !DigestPattern().IsMatch("sha256:" + release.Sha256) ||
-            release.AssetUrl != $"https://github.com/flyybnjj/flyyoptimizer/releases/download/{release.Tag}/{AssetName}") throw Invalid();
+            release.AssetUrl != $"https://github.com/flyybnjj/silen/releases/download/{release.Tag}/{AssetName}") throw Invalid();
     }
     private static InvalidDataException Invalid() => new("La release no es estable o no tiene un archivo oficial con SHA-256 válido.");
     [GeneratedRegex(@"\Av?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*)){0,2}\z", RegexOptions.CultureInvariant)]

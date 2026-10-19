@@ -1,6 +1,6 @@
 # Actualizaciones de Silen 1.1.0
 
-Al abrir normalmente la app, se consulta la última release estable de `flyybnjj/flyyoptimizer` y se descarga automáticamente `Silen-win-x64.zip` si es más reciente. El usuario pulsa **Reiniciar y actualizar** para instalar; el botón espera a que no haya análisis ni cambios en curso. Los modos de diagnóstico y prueba no consultan actualizaciones automáticamente.
+Al abrir normalmente la app, se consulta la última release estable de `flyybnjj/silen` y se descarga automáticamente `Silen-win-x64.zip` si es más reciente. El usuario pulsa **Reiniciar y actualizar** para instalar; el botón espera a que no haya análisis ni cambios en curso. Los modos de diagnóstico y prueba no consultan actualizaciones automáticamente.
 
 ## Integridad y reemplazo
 
@@ -13,7 +13,7 @@ El reemplazo tiene un bloqueo exclusivo y usa una copia de la instalación anter
 ## Compatibilidad y límites
 
 - **El primer paso de FlyyOptimizer a Silen requiere instalación manual en una carpeta nueva.** Los clientes antiguos exigen el nombre anterior del ZIP y del ejecutable. Silen exige `Silen-win-x64.zip`, `Silen-win-x64/` y `Silen.exe`; no se ha publicado un puente de actualización como parte de este rename.
-- El repositorio sigue siendo `flyybnjj/flyyoptimizer`; no se sustituye por una URL sin publicar. El bloqueo interno `.flyy-update.lock` se conserva para coordinar ayudantes antiguos y nuevos.
+- El repositorio oficial es `flyybnjj/silen`, renombrado desde `flyybnjj/flyyoptimizer` el 2026-10-18. Los clientes que consultan la URL anterior pueden requerir actualización manual: no siguen redirecciones de la API y validan la URL exacta del asset. El bloqueo interno `.flyy-update.lock` se conserva para coordinar ayudantes antiguos y nuevos.
 - Los datos nuevos usan `%LocalAppData%\Silen`; una carpeta existente `%LocalAppData%\FlyyOptimizer` tiene prioridad para conservar historial y respaldos sin moverlos ni dividir sus bloqueos.
 - La aplicación de actualizaciones requiere abrir Silen normalmente, sin permisos de administrador, y permisos de escritura en su carpeta portable.
 - Además de GitHub, HTTPS y SHA-256, se exige `Silen-release.json` firmado con ECDSA P-256 y la clave pública incorporada. Se autentican repositorio, versión, nombre, tamaño y hash antes de descargar y nuevamente al instalar. Un paquete sin firma válida se rechaza. No hay certificado Authenticode público: esta firma de manifiesto no elimina los avisos de Windows.

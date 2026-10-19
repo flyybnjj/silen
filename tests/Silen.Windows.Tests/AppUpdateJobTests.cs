@@ -18,7 +18,7 @@ public sealed class AppUpdateJobTests : IDisposable
         Directory.CreateDirectory(Cache);
         File.WriteAllBytes(Path.Combine(Install, "Silen.exe"), "MZold fixture"u8.ToArray());
         var data = "archive fixture"u8.ToArray();
-        var release = new AppRelease(new Version(1, 2, 0, 0), "v1.2.0", "https://github.com/flyybnjj/flyyoptimizer/releases/download/v1.2.0/Silen-win-x64.zip", data.Length, Convert.ToHexString(SHA256.HashData(data)));
+        var release = new AppRelease(new Version(1, 2, 0, 0), "v1.2.0", "https://github.com/flyybnjj/silen/releases/download/v1.2.0/Silen-win-x64.zip", data.Length, Convert.ToHexString(SHA256.HashData(data)));
         var path = Path.Combine(Cache, release.Sha256 + ".zip");
         File.WriteAllBytes(path, data);
         return (PortableAppUpdater.CreateStartInfo(new(release, path), Cache, Path.Combine(Install, "Silen.exe"), 123, 456, new Version(1, 1, 0)), release);
@@ -120,7 +120,7 @@ public sealed class AppUpdateJobTests : IDisposable
         }
         var data = File.ReadAllBytes(temporary);
         var tag = "v" + version;
-        var release = new AppRelease(version, tag, $"https://github.com/flyybnjj/flyyoptimizer/releases/download/{tag}/Silen-win-x64.zip", data.Length, Convert.ToHexString(SHA256.HashData(data)));
+        var release = new AppRelease(version, tag, $"https://github.com/flyybnjj/silen/releases/download/{tag}/Silen-win-x64.zip", data.Length, Convert.ToHexString(SHA256.HashData(data)));
         var archive = Path.Combine(Cache, release.Sha256 + ".zip");
         File.Move(temporary, archive);
         var start = PortableAppUpdater.CreateStartInfo(new(release, archive), Cache, Path.Combine(Install, "Silen.exe"), 123, 456, new Version(0, 1, 0));

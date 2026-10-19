@@ -6,7 +6,7 @@ El alcance de la fase 1 se comunicó en el chat antes de modificar archivos. Se 
 
 - Instalaciones nuevas: `%LocalAppData%\Silen`.
 - Si existe `%LocalAppData%\FlyyOptimizer`, se reutiliza esa raíz, incluso si también existe la nueva. No hay copia ni movimiento de datos.
-- Se conservan la dirección real `flyybnjj/flyyoptimizer` y el bloqueo compartido `.flyy-update.lock`.
+- En la migración inicial se conservó la dirección `flyybnjj/flyyoptimizer`. El 2026-10-18 se renombró el repositorio a `flyybnjj/silen` y se adaptaron las referencias del actualizador y del firmador. Se conserva el bloqueo compartido `.flyy-update.lock`. Los clientes anteriores pueden necesitar actualización manual porque no siguen redirecciones de la API; este cambio no publica una release ni modifica los paquetes antiguos.
 - El salto desde el portable antiguo requiere extraer Silen en otra carpeta y actualizar los accesos directos. El actualizador antiguo no admite los nuevos nombres.
 - La ubicación física del checkout, los binarios y las evidencias históricas ignoradas no se renombran ni eliminan. Los nuevos entregables se generan por separado en `artifacts/Silen-win-x64/` y `artifacts/Silen-win-x64.zip`.
 - Las rutas en documentación previa se normalizan al nombre nuevo; los resultados históricos no constituyen una nueva ejecución de sus pruebas.

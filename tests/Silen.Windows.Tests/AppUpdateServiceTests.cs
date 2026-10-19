@@ -17,14 +17,25 @@ public sealed class AppUpdateServiceTests : IDisposable
         tag_name = tag, draft = false, prerelease,
         assets = Enumerable.Repeat(new { name = "Silen-win-x64.zip", size = size ?? Package.Length,
             digest = digest ?? "sha256:" + Hash,
-            browser_download_url = url ?? $"https://github.com/flyybnjj/flyyoptimizer/releases/download/{tag}/Silen-win-x64.zip" }, duplicate ? 2 : 1)
-            .Concat(includeSignature ? [new { name = "Silen-release.json", size = 1024L, digest = "", browser_download_url = $"https://github.com/flyybnjj/flyyoptimizer/releases/download/{tag}/Silen-release.json" }] : [])
+            browser_download_url = url ?? $"https://github.com/flyybnjj/silen/releases/download/{tag}/Silen-win-x64.zip" }, duplicate ? 2 : 1)
+            .Concat(includeSignature ? [new { name = "Silen-release.json", size = 1024L, digest = "", browser_download_url = $"https://github.com/flyybnjj/silen/releases/download/{tag}/Silen-release.json" }] : [])
     });
 
     private AppUpdateService Service(string metadata, byte[]? data = null) => new(new HttpClient(new Handler(request =>
         request.RequestUri!.Host == "api.github.com"
             ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(metadata) }
             : new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(data ?? Package) }, metadata)), root, TestSigningKey.PublicKey);
+
+    [Fact]
+    public async Task Metadata_uses_canonical_silen_repository()
+    {
+        var service = new AppUpdateService(new HttpClient(new Handler(request =>
+        {
+            Assert.Equal("https://api.github.com/repos/flyybnjj/silen/releases/latest", request.RequestUri!.AbsoluteUri);
+            return new(HttpStatusCode.OK) { Content = new StringContent(Metadata()) };
+        }, Metadata())), root, TestSigningKey.PublicKey);
+        Assert.NotNull(await service.CheckAsync(new Version(1, 1, 0)));
+    }
 
     [Fact]
     public async Task Unsigned_release_is_rejected_even_with_valid_github_digest()
@@ -55,6 +66,7 @@ public sealed class AppUpdateServiceTests : IDisposable
     [InlineData("prerelease")]
     [InlineData("suffix")]
     [InlineData("foreign")]
+    [InlineData("legacy")]
     [InlineData("http")]
     [InlineData("oversize")]
     public async Task Untrusted_metadata_is_rejected(string kind)
@@ -64,7 +76,8 @@ public sealed class AppUpdateServiceTests : IDisposable
             "missing" => Metadata(digest: ""), "duplicate" => Metadata(duplicate: true),
             "prerelease" => Metadata(prerelease: true), "suffix" => Metadata(tag: "v1.2.0-beta"),
             "foreign" => Metadata(url: "https://evil.example/Silen-win-x64.zip"),
-            "http" => Metadata(url: "http://github.com/flyybnjj/flyyoptimizer/releases/download/v1.2.0/Silen-win-x64.zip"),
+            "legacy" => Metadata(url: "https://github.com/flyybnjj/flyyoptimizer/releases/download/v1.2.0/Silen-win-x64.zip"),
+            "http" => Metadata(url: "http://github.com/flyybnjj/silen/releases/download/v1.2.0/Silen-win-x64.zip"),
             _ => Metadata(size: long.MaxValue)
         };
         await Assert.ThrowsAsync<InvalidDataException>(() => Service(json).CheckAsync(new Version(1, 1, 0)));
