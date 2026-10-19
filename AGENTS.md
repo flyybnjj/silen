@@ -1,4 +1,4 @@
-# AGENTS.md · Silen (FlyyOptimizer)
+# AGENTS.md · Silen
 
 Guía operativa y estándar de desarrollo para agentes de IA (OpenAI Codex, Claude, Cursor, Antigravity) que trabajen en este repositorio.
 
