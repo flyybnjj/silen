@@ -140,3 +140,8 @@ Bloom es el asistente y copiloto inteligente de Silen para diagnóstico interact
 - [ ] ¿Se verificó que los tests pasen exitosamente con `dotnet test`?
 - [ ] ¿El binario se compila sin errores ni advertencias nuevas?
 - [ ] ¿La interfaz respeta el tema sobrio sin romper la accesibilidad ni el teclado?
+
+## 8. Autoría de commits
+
+- Usa la identidad Git del usuario: `flyybnjj <121704157+flyybnjj@users.noreply.github.com>` como autor y committer.
+- No sustituyas esta identidad por Codex ni añadas firmas o coautorías de agentes.
